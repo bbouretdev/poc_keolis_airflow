@@ -1,0 +1,28 @@
+# Airflow runtime
+logs/
+airflow.db
+airflow.cfg
+webserver_config.py
+
+# Environment
+.venv/
+venv/
+env/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Custom additions
+airflow.db-shm
+airflow.db-wal
+simple_auth_manager_passwords.json.generated
