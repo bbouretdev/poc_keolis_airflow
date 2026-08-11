@@ -1,0 +1,94 @@
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+Forwarding from 127.0.0.1:9001 -> 9001
+Forwarding from [::1]:9001 -> 9001
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+E0728 15:17:21.517776  662562 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:9001->127.0.0.1:54854: write tcp4 127.0.0.1:9001->127.0.0.1:54854: write: broken pipe"
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+E0728 15:17:21.593193  662562 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:9001->127.0.0.1:55012: write tcp4 127.0.0.1:9001->127.0.0.1:55012: write: broken pipe"
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 9001
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+E0728 16:25:21.519064  662346 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:57136: write tcp4 127.0.0.1:8080->127.0.0.1:57136: write: broken pipe"
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+E0728 16:27:23.064874  662346 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:57190: write tcp4 127.0.0.1:8080->127.0.0.1:57190: write: broken pipe"
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+error: lost connection to pod
+error: lost connection to pod

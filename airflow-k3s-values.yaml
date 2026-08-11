@@ -1,0 +1,50 @@
+defaultAirflowRepository: apache/airflow
+defaultAirflowTag: "2.10.5"
+
+executor: "KubernetesExecutor"
+
+# --- Webserver Airflow 2 ---
+webserver:
+  defaultUser:
+    enabled: true
+    role: Admin
+    username: admin
+    password: admin
+
+# --- Config Remote Logging (MinIO) ---
+config:
+  logging:
+    remote_logging: "True"
+    remote_base_log_folder: "s3://airflow-logs"
+    remote_log_conn_id: "airflow_s3_conn"
+
+extraEnv: |
+  - name: AIRFLOW_CONN_AIRFLOW_S3_CONN
+    valueFrom:
+      secretKeyRef:
+        name: airflow-s3-conn
+        key: connection
+
+# --- Synchronisation GitSync ---
+dags:
+  persistence:
+    enabled: false
+  gitSync:
+    enabled: true
+    repo: "https://github.com/bbouretdev/poc_keolis_airflow.git"
+    branch: "master"
+    subPath: "dags"
+    wait: 60
+
+# --- REMPLACEMENT DE BITNAMI PAR POSTGRES OFFICIEL ---
+postgresql:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: postgres
+    tag: "15-alpine"
+
+statsd:
+  enabled: false
+pgbouncer:
+  enabled: false
