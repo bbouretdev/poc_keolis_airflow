@@ -2,7 +2,7 @@ from airflow.models.param import Param
 from lib.postgres_postgres_factory_kubernetes import create_dlt_postgres_dag
 
 dag = create_dlt_postgres_dag(
-    dag_id="templatized__postgres_postgres_ORDERS",
+    dag_id="templatized__ORDERS",
     description="Incrémentation et mise à jour de la table clients",
     schedule="0 2 * * *",
     params={
