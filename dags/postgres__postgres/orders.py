@@ -1,13 +1,13 @@
 from airflow.models.param import Param
-from lib.postgres_postgres_factory_kubernetes import create_dlt_postgres_dag
+from factories.postgres_postgres.kubernetes_mode import create_dag
 
 dag = create_dlt_postgres_dag(
-    dag_id="templatized__ORDERS",
-    description="Incrémentation et mise à jour de la table clients",
+    dag_id="orders",
+    description="Incrémentation et mise à jour de la table commandes",
     schedule="0 2 * * *",
     params={
         "ID_PIPELINE": Param(
-            "CUSTOMERS_PIPELINE_MERGE",
+            "ORDERS",
             type="string",
             title="ID du Pipeline DLT"
         ),
