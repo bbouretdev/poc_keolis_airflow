@@ -1,6 +1,6 @@
 from airflow.sdk import Param
 
-from lib.postgres_postgres_factory import create_dlt_dag
+from factories.postgres_postgres_factory import create_dlt_dag
 
 
 dag = create_dlt_dag(

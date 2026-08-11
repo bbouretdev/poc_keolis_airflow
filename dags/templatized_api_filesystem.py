@@ -1,6 +1,6 @@
 from airflow.sdk import Param
 
-from lib.api_filesystem_factory import create_dlt_dag
+from factories.api_filesystem_factory import create_dlt_dag
 
 
 dag = create_dlt_dag(
