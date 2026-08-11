@@ -1,10 +1,17 @@
+import json
 from datetime import datetime
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from airflow.hooks.base import BaseHook
-import json
+# Utilisation des nouveaux imports recommandés par Airflow 3.x
+from airflow.sdk.bases.hook import BaseHook
 
-def create_dlt_postgres_dag(dag_id: str, description: str, params: dict, schedule=None):
+
+def create_dlt_postgres_dag(
+    dag_id: str,
+    description: str,
+    params: dict,
+    schedule=None,
+):
 
     with DAG(
         dag_id=dag_id,
@@ -15,61 +22,71 @@ def create_dlt_postgres_dag(dag_id: str, description: str, params: dict, schedul
         params=params,
     ) as dag:
 
-        def build_env_and_run(context):
-            # Récupération des connexions Airflow (Dev)
-            p = context["params"]
-            src_conn = BaseHook.get_connection(p["POSTGRESQL_SOURCE"])
-            dst_conn = BaseHook.get_connection(p["POSTGRESQL_CIBLE"])
+        # --- 1. Récupération des connexions ---
+        # Note : Si vous passez les noms de connexions via des defaults dans params, 
+        # on peut extraire leurs valeurs :
+        src_conn_id = params["POSTGRESQL_SOURCE"].value if hasattr(params["POSTGRESQL_SOURCE"], "value") else params["POSTGRESQL_SOURCE"]
+        dst_conn_id = params["POSTGRESQL_CIBLE"].value if hasattr(params["POSTGRESQL_CIBLE"], "value") else params["POSTGRESQL_CIBLE"]
 
-            env_vars = {
-                "RUNTIME__LOG_LEVEL": "INFO",
-                "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
-                "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": src_conn.schema,
-                "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": src_conn.login,
-                "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": src_conn.password,
-                "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": src_conn.host,
-                "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": str(src_conn.port),
+        src_conn = BaseHook.get_connection(src_conn_id)
+        dst_conn = BaseHook.get_connection(dst_conn_id)
 
-                "DESTINATION__POSTGRES_DEST__DESTINATION_TYPE": "postgres",
-                "DESTINATION__POSTGRES_DEST__CREDENTIALS__DRIVERNAME": "postgresql",
-                "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": dst_conn.schema,
-                "DESTINATION__POSTGRES_DEST__CREDENTIALS__USERNAME": dst_conn.login,
-                "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": dst_conn.password,
-                "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": dst_conn.host,
-                "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": str(dst_conn.port),
+        # --- 2. Construction du dictionnaire env_vars ---
+        # On lit directement les valeurs par défaut des paramètres
+        dlt_env_vars = {
+            "RUNTIME__LOG_LEVEL": "INFO",
+            "RUNTIME__DLTHUB_TELEMETRY": "false",
+            "RUNTIME__WORKERS": "4",
 
-                "DLT_PIPELINE_ID": p["ID_PIPELINE"],
-                "DLT_SOURCE_SCHEMA": p["SCHEMA_SOURCE"],
-                "DLT_SOURCE_TABLE": p["TABLE_SOURCE"],
-                "DLT_TARGET_SCHEMA": p["SCHEMA_CIBLE"],
-                "DLT_TARGET_TABLE": p["TABLE_CIBLE"],
-                "DLT_WRITE_STRATEGY": p["STRATEGIE_ECRITURE"],
-                "DLT_BACKEND": p["MOTEUR_DLT"],
-                "DLT_CHUNK_SIZE": str(p["TAILLE_LOT"]),
-            }
-            if p.get("CLE_PRIMAIRE"):
-                env_vars["DLT_PRIMARY_KEY"] = json.dumps(p["CLE_PRIMAIRE"])
+            # Source Database
+            "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": str(src_conn.schema or ""),
+            "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": str(src_conn.login or ""),
+            "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": str(src_conn.password or ""),
+            "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": str(src_conn.host or ""),
+            "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": str(src_conn.port or 5432),
 
-            return env_vars
+            # Destination Database
+            "DESTINATION__POSTGRES_DEST__DESTINATION_TYPE": "postgres",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DRIVERNAME": "postgresql",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": str(dst_conn.schema or ""),
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__USERNAME": str(dst_conn.login or ""),
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": str(dst_conn.password or ""),
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": str(dst_conn.host or ""),
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": str(dst_conn.port or 5432),
 
-        # Tâche unique exécutée dans le Pod Kubernetes
+            # Paramètres du DAG (Passage Jinja pour résoudre dynamiquement au Runtime si changé via UI)
+            "DLT_PIPELINE_ID": "{{ params.ID_PIPELINE }}",
+            "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
+            "DLT_SOURCE_TABLE": "{{ params.TABLE_SOURCE }}",
+            "DLT_TARGET_SCHEMA": "{{ params.SCHEMA_CIBLE }}",
+            "DLT_TARGET_TABLE": "{{ params.TABLE_CIBLE }}",
+            "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
+            "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
+            "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
+            "DLT_PRIMARY_KEY": "{{ params.CLE_PRIMAIRE | tojson }}",
+        }
+
         git_host = BaseHook.get_connection("git-dlt").host
-        
-        # Script bash d'exécution dans le Pod
+
         bash_cmd = f"""
         set -e
-        git clone --branch main {git_host} /tmp/repo
+        echo "=== Cloning repository ==="
+        git clone {git_host} /tmp/repo
         cd /tmp/repo
-        python pipelines/postgres_to_postgres.py
+
+        echo "=== Running DLT generic script ==="
+        python generic.py
         """
 
+        # --- 3. Instanciation de l'opérateur avec un dict pur ---
         run_pod = KubernetesPodOperator(
             task_id="run_dlt_ingestion",
             name=f"dlt-pod-{dag_id}".replace("_", "-").lower(),
             namespace="default",
             image="dlt-ingestion-engine:dev",
             image_pull_policy="Never",
-            env_vars="{{ task_instance.xcom_pull(task_ids='prepare_env') }}", # Injection dynamique des envs
+            env_vars=dlt_env_vars,  # <--- Dictionnaire Python natif (les valeurs individuelles utilisent Jinja)
             cmds=["/bin/bash", "-c"],
             arguments=[bash_cmd],
             get_logs=True,
