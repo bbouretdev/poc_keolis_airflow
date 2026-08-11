@@ -82,7 +82,7 @@ def create_dlt_postgres_dag(
         cd /tmp/repo
 
         echo "=== Running DLT generic script ==="
-        python generic.py
+        python pipelines/postgres_postgres/generic.py
         """
 
         run_pod = KubernetesPodOperator(
