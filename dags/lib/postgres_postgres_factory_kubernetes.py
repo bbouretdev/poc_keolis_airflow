@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-# Utilisation des nouveaux imports recommandés par Airflow 3.x
+from airflow.sdk import Param
 from airflow.sdk.bases.hook import BaseHook
 
 
@@ -22,23 +22,29 @@ def create_dlt_postgres_dag(
         params=params,
     ) as dag:
 
-        # --- 1. Récupération des connexions ---
-        # Note : Si vous passez les noms de connexions via des defaults dans params, 
-        # on peut extraire leurs valeurs :
-        src_conn_id = params["POSTGRESQL_SOURCE"].value if hasattr(params["POSTGRESQL_SOURCE"], "value") else params["POSTGRESQL_SOURCE"]
-        dst_conn_id = params["POSTGRESQL_CIBLE"].value if hasattr(params["POSTGRESQL_CIBLE"], "value") else params["POSTGRESQL_CIBLE"]
+        # Récupération sécurisée des ID de connexion depuis les params
+        # (Évite les plantages lors de l'analyse du fichier par le Scheduler)
+        src_conn_id = params.get("POSTGRESQL_SOURCE")
+        if isinstance(src_conn_id, Param):
+            src_conn_id = src_conn_id.value
 
+        dst_conn_id = params.get("POSTGRESQL_CIBLE")
+        if isinstance(dst_conn_id, Param):
+            dst_conn_id = dst_conn_id.value
+
+        # Récupération des informations de connexions Airflow
         src_conn = BaseHook.get_connection(src_conn_id)
         dst_conn = BaseHook.get_connection(dst_conn_id)
+        git_conn = BaseHook.get_connection("git-dlt")
 
-        # --- 2. Construction du dictionnaire env_vars ---
-        # On lit directement les valeurs par défaut des paramètres
+        # Construction du dictionnaire de variables d'environnement
+        # Les valeurs dynamiques utilisent les expressions Jinja d'Airflow
         dlt_env_vars = {
             "RUNTIME__LOG_LEVEL": "INFO",
             "RUNTIME__DLTHUB_TELEMETRY": "false",
             "RUNTIME__WORKERS": "4",
 
-            # Source Database
+            # Connection Source Postgres
             "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
             "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": str(src_conn.schema or ""),
             "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": str(src_conn.login or ""),
@@ -46,7 +52,7 @@ def create_dlt_postgres_dag(
             "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": str(src_conn.host or ""),
             "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": str(src_conn.port or 5432),
 
-            # Destination Database
+            # Connection Destination Postgres
             "DESTINATION__POSTGRES_DEST__DESTINATION_TYPE": "postgres",
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__DRIVERNAME": "postgresql",
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": str(dst_conn.schema or ""),
@@ -55,7 +61,7 @@ def create_dlt_postgres_dag(
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": str(dst_conn.host or ""),
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": str(dst_conn.port or 5432),
 
-            # Paramètres du DAG (Passage Jinja pour résoudre dynamiquement au Runtime si changé via UI)
+            # Paramètres évalués au Runtime via Jinja
             "DLT_PIPELINE_ID": "{{ params.ID_PIPELINE }}",
             "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
             "DLT_SOURCE_TABLE": "{{ params.TABLE_SOURCE }}",
@@ -67,7 +73,7 @@ def create_dlt_postgres_dag(
             "DLT_PRIMARY_KEY": "{{ params.CLE_PRIMAIRE | tojson }}",
         }
 
-        git_host = BaseHook.get_connection("git-dlt").host
+        git_host = git_conn.host
 
         bash_cmd = f"""
         set -e
@@ -79,14 +85,13 @@ def create_dlt_postgres_dag(
         python generic.py
         """
 
-        # --- 3. Instanciation de l'opérateur avec un dict pur ---
         run_pod = KubernetesPodOperator(
             task_id="run_dlt_ingestion",
             name=f"dlt-pod-{dag_id}".replace("_", "-").lower(),
             namespace="default",
             image="dlt-ingestion-engine:dev",
             image_pull_policy="Never",
-            env_vars=dlt_env_vars,  # <--- Dictionnaire Python natif (les valeurs individuelles utilisent Jinja)
+            env_vars=dlt_env_vars,
             cmds=["/bin/bash", "-c"],
             arguments=[bash_cmd],
             get_logs=True,
