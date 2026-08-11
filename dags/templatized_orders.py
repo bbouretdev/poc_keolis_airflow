@@ -12,12 +12,12 @@ dag = create_dlt_postgres_dag(
             title="ID du Pipeline DLT"
         ),
         "POSTGRESQL_SOURCE": Param(
-            "postgres-source",
+            "postgres_source",
             type="string",
             title="Connexion Airflow Source"
         ),
         "POSTGRESQL_CIBLE": Param(
-            "postgres-cible",
+            "postgres_cible",
             type="string",
             title="Connexion Airflow Cible"
         ),
