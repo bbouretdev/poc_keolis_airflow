@@ -88,7 +88,7 @@ def create_dlt_postgres_dag(
         run_pod = KubernetesPodOperator(
             task_id="run_dlt_ingestion",
             name=f"dlt-pod-{dag_id}".replace("_", "-").lower(),
-            namespace="default",
+            namespace="airflow",
             image="dlt-ingestion-engine:dev",
             image_pull_policy="Never",
             env_vars=dlt_env_vars,
