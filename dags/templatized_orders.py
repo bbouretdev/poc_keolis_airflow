@@ -22,7 +22,7 @@ dag = create_dlt_postgres_dag(
             title="Connexion Airflow Cible"
         ),
         "SCHEMA_SOURCE": Param(
-            "public",
+            "dlt",
             type="string"
         ),
         "TABLE_SOURCE": Param(
@@ -30,17 +30,17 @@ dag = create_dlt_postgres_dag(
             type="string"
         ),
         "SCHEMA_CIBLE": Param(
-            "raw_data",
+            "dlt",
             type="string"
         ),
         "TABLE_CIBLE": Param(
-            "customers",
+            "orders",
             type="string"
         ),
         "STRATEGIE_ECRITURE": Param(
-            default="METTRE_A_JOUR",
+            default="REPLACE",
             type="string",
-            enum=["ECRASER", "AJOUTER", "METTRE_A_JOUR"],
+            enum=["REPLACE", "APPEND", "UPDATE"],
             title="Stratégie d'écriture",
             description="Choisissez la stratégie d'écriture des données."
         ),
