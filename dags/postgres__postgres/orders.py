@@ -1,7 +1,7 @@
 from airflow.models.param import Param
 from factories.postgres_postgres.kubernetes_mode import create_dag
 
-dag = create_dlt_postgres_dag(
+dag = create_dag(
     dag_id="orders",
     description="Incrémentation et mise à jour de la table commandes",
     schedule="0 2 * * *",
