@@ -2,21 +2,35 @@ import logging
 from pathlib import Path
 import yaml
 
-# OBLIGATOIRE : Permet à Airflow d'identifier ce fichier Python comme générateur de DAGs
-from airflow import DAG
+from airflow import DAG  # Imperatif pour qu'Airflow détecte le fichier
 from airflow.sdk import Param
 
 from factories.postgres_postgres.kubernetes_mode_yaml import create_dag
 
 logger = logging.getLogger(__name__)
 
-# Chemin absolu basé sur l'emplacement réel dans /opt/airflow/dags/
+# Emplacement du fichier dag_generator.py
 CURRENT_DIR = Path(__file__).resolve().parent
-CONFIGS_DIR = CURRENT_DIR / "configs" / "postgres_postgres"
+
+# Recherche du dossier 'configs' à partir du dossier parent du projet
+# On teste plusieurs positions relatives pour être 100% robuste avec Git-Sync
+candidate_1 = CURRENT_DIR / "configs" / "postgres_postgres"
+candidate_2 = CURRENT_DIR.parent / "configs" / "postgres_postgres"
+candidate_3 = CURRENT_DIR.parent.parent / "configs" / "postgres_postgres"
+
+if candidate_1.exists():
+    CONFIGS_DIR = candidate_1
+elif candidate_2.exists():
+    CONFIGS_DIR = candidate_2
+elif candidate_3.exists():
+    CONFIGS_DIR = candidate_3
+else:
+    CONFIGS_DIR = candidate_1
+
+print(f"=== [DAG_GENERATOR] Dossier de configuration retenu : {CONFIGS_DIR} (Existe: {CONFIGS_DIR.exists()}) ===")
 
 
 def build_airflow_params(raw_params: dict) -> dict:
-    """Reconstruit les objets Param d'Airflow depuis les valeurs YAML."""
     return {
         "ID_PIPELINE": Param(raw_params.get("ID_PIPELINE", "DEFAULT_ID"), type="string", title="ID du Pipeline DLT"),
         "POSTGRESQL_SOURCE": Param(raw_params.get("POSTGRESQL_SOURCE", "postgres_source"), type="string", title="Connexion Source"),
@@ -42,7 +56,6 @@ def build_airflow_params(raw_params: dict) -> dict:
     }
 
 
-# Boucle de génération
 if CONFIGS_DIR.exists():
     for yaml_file in CONFIGS_DIR.glob("*.yaml"):
         try:
@@ -55,7 +68,6 @@ if CONFIGS_DIR.exists():
             dag_id = pipeline_config["dag_id"]
             formatted_params = build_airflow_params(pipeline_config.get("params", {}))
 
-            # Instanciation via la Factory
             generated_dag = create_dag(
                 dag_id=dag_id,
                 description=pipeline_config.get("description", ""),
@@ -63,8 +75,11 @@ if CONFIGS_DIR.exists():
                 params=formatted_params,
             )
 
-            # Enregistrement global obligatoire
+            # Assignation dans l'espace global
             globals()[dag_id] = generated_dag
+            print(f"=== [DAG_GENERATOR] DAG '{dag_id}' instancie avec succes ===")
 
         except Exception as e:
             logger.error(f"Erreur lors du chargement du fichier YAML {yaml_file.name}: {e}")
+else:
+    print(f"=== [DAG_GENERATOR] ATTENTION: {CONFIGS_DIR} est introuvable ===")
