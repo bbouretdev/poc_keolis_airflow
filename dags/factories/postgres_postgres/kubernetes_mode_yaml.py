@@ -1,0 +1,86 @@
+import json
+from datetime import datetime
+from airflow import DAG
+from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
+
+
+def create_dag(
+    dag_id: str,
+    description: str,
+    params: dict,
+    schedule=None,
+):
+
+    with DAG(
+        dag_id=dag_id,
+        description=description,
+        start_date=datetime(2024, 1, 1),
+        schedule=schedule,
+        catchup=False,
+        params=params,
+    ) as dag:
+
+        # Evaluation paresseuse (Lazy evaluation) au runtime via Jinja
+        src_conn_id = "{{ params.POSTGRESQL_SOURCE }}"
+        dst_conn_id = "{{ params.POSTGRESQL_CIBLE }}"
+
+        dlt_env_vars = {
+            "RUNTIME__LOG_LEVEL": "INFO",
+            "RUNTIME__DLTHUB_TELEMETRY": "false",
+            "RUNTIME__WORKERS": "4",
+
+            # Source Postgres (Résolu par Airflow uniquement au lancement du Pod)
+            "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": f"{{{{ conn.{src_conn_id}.schema }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": f"{{{{ conn.{src_conn_id}.login }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": f"{{{{ conn.{src_conn_id}.password }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": f"{{{{ conn.{src_conn_id}.host }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": f"{{{{ conn.{src_conn_id}.port or 5432 }}}}",
+
+            # Destination Postgres
+            "DESTINATION__POSTGRES_DEST__DESTINATION_TYPE": "postgres",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DRIVERNAME": "postgresql",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": f"{{{{ conn.{dst_conn_id}.schema }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__USERNAME": f"{{{{ conn.{dst_conn_id}.login }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": f"{{{{ conn.{dst_conn_id}.password }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": f"{{{{ conn.{dst_conn_id}.host }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": f"{{{{ conn.{dst_conn_id}.port or 5432 }}}}",
+
+            # Params DLT
+            "DLT_PIPELINE_ID": "{{ params.ID_PIPELINE }}",
+            "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
+            "DLT_SOURCE_TABLE": "{{ params.TABLE_SOURCE }}",
+            "DLT_TARGET_SCHEMA": "{{ params.SCHEMA_CIBLE }}",
+            "DLT_TARGET_TABLE": "{{ params.TABLE_CIBLE }}",
+            "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
+            "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
+            "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
+            "DLT_PRIMARY_KEY": "{{ params.CLE_PRIMAIRE | tojson }}",
+        }
+
+        git_host = "{{ conn.git-dlt.host }}"
+
+        bash_cmd = f"""
+        set -e
+        echo "=== Cloning repository ==="
+        git clone {git_host} /tmp/repo
+        cd /tmp/repo
+
+        echo "=== Running DLT generic script ==="
+        python pipelines/postgres_postgres/generic.py
+        """
+
+        run_pod = KubernetesPodOperator(
+            task_id="run_dlt_ingestion",
+            name=f"dlt-pod-{dag_id}".replace("_", "-").lower(),
+            namespace="airflow",
+            image="dlt-ingestion-engine:dev",
+            image_pull_policy="Never",
+            env_vars=dlt_env_vars,
+            cmds=["/bin/bash", "-c"],
+            arguments=[bash_cmd],
+            get_logs=True,
+            is_delete_operator_pod=True,
+        )
+
+    return dag
