@@ -1,0 +1,15 @@
+dag_id: "items"
+description: "Incrémentation et mise à jour de la table commandes"
+schedule: "0 2 * * *"
+params:
+  ID_PIPELINE: "ITEMS"
+  POSTGRESQL_SOURCE: "postgres_source"
+  POSTGRESQL_CIBLE: "postgres_cible"
+  SCHEMA_SOURCE: "dlt"
+  TABLE_SOURCE: "orders"
+  SCHEMA_CIBLE: "dlt"
+  TABLE_CIBLE: "orders"
+  STRATEGIE_ECRITURE: "REPLACE"
+  CLE_PRIMAIRE: ["customer_id"]
+  MOTEUR_DLT: "connectorx"
+  TAILLE_LOT: 100000
