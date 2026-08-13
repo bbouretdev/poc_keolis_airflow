@@ -20,7 +20,7 @@ def create_dag(
         params=params,
     ) as dag:
 
-        # Evaluation paresseuse (Lazy evaluation) au runtime via Jinja
+        # Evaluation paresseuse au runtime via Jinja
         src_conn_id = "{{ params.POSTGRESQL_SOURCE }}"
         dst_conn_id = "{{ params.POSTGRESQL_CIBLE }}"
 
@@ -29,22 +29,22 @@ def create_dag(
             "RUNTIME__DLTHUB_TELEMETRY": "false",
             "RUNTIME__WORKERS": "4",
 
-            # Source Postgres (Résolu par Airflow uniquement au lancement du Pod)
+            # Source Postgres (Utilisation de conn.get() pour éviter le piège des tirets)
             "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": f"{{{{ conn.{src_conn_id}.schema }}}}",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": f"{{{{ conn.{src_conn_id}.login }}}}",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": f"{{{{ conn.{src_conn_id}.password }}}}",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": f"{{{{ conn.{src_conn_id}.host }}}}",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": f"{{{{ conn.{src_conn_id}.port or 5432 }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": f"{{{{ conn.get({src_conn_id}).schema }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": f"{{{{ conn.get({src_conn_id}).login }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": f"{{{{ conn.get({src_conn_id}).password }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": f"{{{{ conn.get({src_conn_id}).host }}}}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": f"{{{{ conn.get({src_conn_id}).port or 5432 }}}}",
 
             # Destination Postgres
             "DESTINATION__POSTGRES_DEST__DESTINATION_TYPE": "postgres",
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__DRIVERNAME": "postgresql",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": f"{{{{ conn.{dst_conn_id}.schema }}}}",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__USERNAME": f"{{{{ conn.{dst_conn_id}.login }}}}",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": f"{{{{ conn.{dst_conn_id}.password }}}}",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": f"{{{{ conn.{dst_conn_id}.host }}}}",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": f"{{{{ conn.{dst_conn_id}.port or 5432 }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": f"{{{{ conn.get({dst_conn_id}).schema }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__USERNAME": f"{{{{ conn.get({dst_conn_id}).login }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": f"{{{{ conn.get({dst_conn_id}).password }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": f"{{{{ conn.get({dst_conn_id}).host }}}}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": f"{{{{ conn.get({dst_conn_id}).port or 5432 }}}}",
 
             # Params DLT
             "DLT_PIPELINE_ID": "{{ params.ID_PIPELINE }}",
@@ -58,7 +58,8 @@ def create_dag(
             "DLT_PRIMARY_KEY": "{{ params.CLE_PRIMAIRE | tojson }}",
         }
 
-        git_host = "{{ conn.git-dlt.host }}"
+        # CORRECTION : conn.get('git-dlt') au lieu de conn.git-dlt
+        git_host = "{{ conn.get('git-dlt').host }}"
 
         bash_cmd = f"""
         set -e
