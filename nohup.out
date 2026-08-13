@@ -201,3 +201,8 @@ Handling connection for 8080
 Handling connection for 8080
 Handling connection for 8080
 E0813 10:40:52.001300   11028 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:49602: write tcp4 127.0.0.1:8080->127.0.0.1:49602: write: broken pipe"
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+E0813 10:43:00.008636   11028 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:47156: write tcp4 127.0.0.1:8080->127.0.0.1:47156: write: broken pipe"

@@ -20,24 +20,20 @@ def create_dag(
         params=params,
     ) as dag:
 
-        # Evaluation paresseuse au runtime via Jinja
-        src_conn_id = "{{ params.POSTGRESQL_SOURCE }}"
-        dst_conn_id = "{{ params.POSTGRESQL_CIBLE }}"
-
         dlt_env_vars = {
             "RUNTIME__LOG_LEVEL": "INFO",
             "RUNTIME__DLTHUB_TELEMETRY": "false",
             "RUNTIME__WORKERS": "4",
-        
-            # Source Postgres : passage direct de params.POSTGRESQL_SOURCE dans conn.get()
+
+            # Source Postgres (Évaluation Jinja au runtime)
             "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
             "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": "{{ conn.get(params.POSTGRESQL_SOURCE).schema }}",
             "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": "{{ conn.get(params.POSTGRESQL_SOURCE).login }}",
             "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": "{{ conn.get(params.POSTGRESQL_SOURCE).password }}",
             "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
             "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port or 5432 }}",
-        
-            # Destination Postgres : passage direct de params.POSTGRESQL_CIBLE dans conn.get()
+
+            # Destination Postgres
             "DESTINATION__POSTGRES_DEST__DESTINATION_TYPE": "postgres",
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__DRIVERNAME": "postgresql",
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": "{{ conn.get(params.POSTGRESQL_CIBLE).schema }}",
@@ -45,7 +41,7 @@ def create_dag(
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": "{{ conn.get(params.POSTGRESQL_CIBLE).password }}",
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_CIBLE).host }}",
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_CIBLE).port or 5432 }}",
-        
+
             # Params DLT
             "DLT_PIPELINE_ID": "{{ params.ID_PIPELINE }}",
             "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
@@ -58,8 +54,8 @@ def create_dag(
             "DLT_PRIMARY_KEY": "{{ params.CLE_PRIMAIRE | tojson }}",
         }
 
-        # CORRECTION : conn.get('git-dlt') au lieu de conn.git-dlt
-        git_host = "{{ conn.get('git-dlt').host }}"
+        # Résolution dynamique de la connexion Git sans "magic string"
+        git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
 
         bash_cmd = f"""
         set -e
