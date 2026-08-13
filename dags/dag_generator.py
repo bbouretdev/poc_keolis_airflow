@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 import yaml
 
-# OBLIGATOIRE : Présence explicite de DAG pour que le parser Airflow évalue le fichier
+# OBLIGATOIRE : Import explicite pour que le parser Airflow évalue le fichier
 from airflow import DAG
 from airflow.sdk import Param
 
@@ -10,18 +10,16 @@ from factories.postgres_postgres.kubernetes_mode_yaml import create_dag
 
 logger = logging.getLogger(__name__)
 
-# Racine du bundle de DAGs (emplacement de dag_generator.py)
-BASE_DIR = Path(__file__).resolve().parent
+# Résolution exacte du dossier physique du worktree courant
+# Exemple dans le Pod : /opt/airflow/dags/.worktrees/<HASH>/dags/
+CURRENT_DIR = Path(__file__).resolve().parent
 
-# Recherche récursive de TOUS les fichiers .yaml situés dans n'importe quel dossier 'configs'
-yaml_files = list(BASE_DIR.rglob("configs/**/*.yaml"))
-
-print(f"=== [DAG_GENERATOR] Scan de la racine : {BASE_DIR} ===")
-print(f"=== [DAG_GENERATOR] {len(yaml_files)} fichier(s) YAML trouvé(s) : {[f.name for f in yaml_files]} ===")
+# Dossier des configurations YAML relatif à ce fichier Python
+CONFIGS_DIR = CURRENT_DIR / "configs" / "postgres_postgres"
 
 
 def build_airflow_params(raw_params: dict) -> dict:
-    """Reconstruit le dictionnaire de Param Airflow à partir de la configuration YAML."""
+    """Reconstruit le dictionnaire de Param d'Airflow depuis les données YAML."""
     raw_params = raw_params or {}
     return {
         "ID_PIPELINE": Param(
@@ -69,29 +67,32 @@ def build_airflow_params(raw_params: dict) -> dict:
 
 
 # Génération dynamique des DAGs
-for yaml_file in yaml_files:
-    try:
-        with open(yaml_file, "r", encoding="utf-8") as f:
-            pipeline_config = yaml.safe_load(f)
+if CONFIGS_DIR.exists():
+    yaml_files = list(CONFIGS_DIR.glob("*.yaml"))
 
-        if not pipeline_config or "dag_id" not in pipeline_config:
-            print(f"=== [DAG_GENERATOR] Ignoré (pas de dag_id) : {yaml_file.name} ===")
-            continue
+    for yaml_file in yaml_files:
+        try:
+            with open(yaml_file, "r", encoding="utf-8") as f:
+                pipeline_config = yaml.safe_load(f)
 
-        dag_id = pipeline_config["dag_id"]
-        formatted_params = build_airflow_params(pipeline_config.get("params", {}))
+            if not pipeline_config or "dag_id" not in pipeline_config:
+                continue
 
-        # Instanciation via la Factory
-        generated_dag = create_dag(
-            dag_id=dag_id,
-            description=pipeline_config.get("description", ""),
-            schedule=pipeline_config.get("schedule"),
-            params=formatted_params,
-        )
+            dag_id = pipeline_config["dag_id"]
+            formatted_params = build_airflow_params(pipeline_config.get("params", {}))
 
-        # Enregistrement dans les variables globales pour Airflow
-        globals()[dag_id] = generated_dag
-        print(f"=== [DAG_GENERATOR] DAG '{dag_id}' créé avec succès depuis {yaml_file.name} ===")
+            # Instanciation via la Factory DLT
+            generated_dag = create_dag(
+                dag_id=dag_id,
+                description=pipeline_config.get("description", ""),
+                schedule=pipeline_config.get("schedule"),
+                params=formatted_params,
+            )
 
-    except Exception as e:
-        logger.error(f"Erreur lors du traitement du fichier {yaml_file.name}: {e}", exc_info=True)
+            # Enregistrement dans les variables globales d'Airflow
+            globals()[dag_id] = generated_dag
+
+        except Exception as e:
+            logger.error(f"Erreur lors du traitement du fichier YAML {yaml_file.name}: {e}", exc_info=True)
+else:
+    logger.warning(f"Dossier de configuration introuvable dans le worktree : {CONFIGS_DIR}")
