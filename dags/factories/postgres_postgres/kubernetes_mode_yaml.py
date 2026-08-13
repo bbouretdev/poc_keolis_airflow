@@ -28,24 +28,24 @@ def create_dag(
             "RUNTIME__LOG_LEVEL": "INFO",
             "RUNTIME__DLTHUB_TELEMETRY": "false",
             "RUNTIME__WORKERS": "4",
-
-            # Source Postgres (Utilisation de conn.get() pour éviter le piège des tirets)
+        
+            # Source Postgres : passage direct de params.POSTGRESQL_SOURCE dans conn.get()
             "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": f"{{{{ conn.get({src_conn_id}).schema }}}}",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": f"{{{{ conn.get({src_conn_id}).login }}}}",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": f"{{{{ conn.get({src_conn_id}).password }}}}",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": f"{{{{ conn.get({src_conn_id}).host }}}}",
-            "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": f"{{{{ conn.get({src_conn_id}).port or 5432 }}}}",
-
-            # Destination Postgres
+            "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": "{{ conn.get(params.POSTGRESQL_SOURCE).schema }}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": "{{ conn.get(params.POSTGRESQL_SOURCE).login }}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": "{{ conn.get(params.POSTGRESQL_SOURCE).password }}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
+            "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port or 5432 }}",
+        
+            # Destination Postgres : passage direct de params.POSTGRESQL_CIBLE dans conn.get()
             "DESTINATION__POSTGRES_DEST__DESTINATION_TYPE": "postgres",
             "DESTINATION__POSTGRES_DEST__CREDENTIALS__DRIVERNAME": "postgresql",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": f"{{{{ conn.get({dst_conn_id}).schema }}}}",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__USERNAME": f"{{{{ conn.get({dst_conn_id}).login }}}}",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": f"{{{{ conn.get({dst_conn_id}).password }}}}",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": f"{{{{ conn.get({dst_conn_id}).host }}}}",
-            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": f"{{{{ conn.get({dst_conn_id}).port or 5432 }}}}",
-
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": "{{ conn.get(params.POSTGRESQL_CIBLE).schema }}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__USERNAME": "{{ conn.get(params.POSTGRESQL_CIBLE).login }}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": "{{ conn.get(params.POSTGRESQL_CIBLE).password }}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_CIBLE).host }}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_CIBLE).port or 5432 }}",
+        
             # Params DLT
             "DLT_PIPELINE_ID": "{{ params.ID_PIPELINE }}",
             "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
