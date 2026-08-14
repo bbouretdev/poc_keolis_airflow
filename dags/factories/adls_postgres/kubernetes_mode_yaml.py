@@ -23,7 +23,7 @@ def create_dag(
         dlt_env_vars = {
             "RUNTIME__LOG_LEVEL": "INFO",
             "RUNTIME__DLTHUB_TELEMETRY": "false",
-            "RUNTIME__WORKERS": "4",
+            "RUNTIME__WORKERS": "1",
 
             # Mode de fonctionnement Storage (Azurite vs Azure Cloud)
             "USE_AZURITE": "{{ params.USE_AZURITE }}",
