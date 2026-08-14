@@ -1,3 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: azurite-pvc
+  namespace: airflow
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,27 +30,20 @@ spec:
       containers:
         - name: azurite
           image: mcr.microsoft.com/azure-storage/azurite:latest
-          command: ["azurite"]
-          args:
-            - "--blobHost"
-            - "0.0.0.0"
-            - "--queueHost"
-            - "0.0.0.0"
-            - "--tableHost"
-            - "0.0.0.0"
-            - "--skipApiVersionCheck"   # <-- Désactive la vérification stricte de version d'API
+          command:
+            - azurite-blob
+            - --blobHost
+            - 0.0.0.0
+            - --location
+            - /data
           ports:
-            - name: blob
-              containerPort: 10000
-            - name: queue
-              containerPort: 10001
-            - name: table
-              containerPort: 10002
+            - containerPort: 10000
+              name: blob
           volumeMounts:
-            - name: azurite-data
+            - name: azurite-storage
               mountPath: /data
       volumes:
-        - name: azurite-data
+        - name: azurite-storage
           persistentVolumeClaim:
             claimName: azurite-pvc
 ---
@@ -49,15 +54,9 @@ metadata:
   namespace: airflow
 spec:
   type: ClusterIP
+  selector:
+    app: azurite
   ports:
     - port: 10000
       targetPort: 10000
       name: blob
-    - port: 10001
-      targetPort: 10001
-      name: queue
-    - port: 10002
-      targetPort: 10002
-      name: table
-  selector:
-    app: azurite

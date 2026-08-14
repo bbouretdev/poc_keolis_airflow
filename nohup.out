@@ -300,3 +300,11 @@ Handling connection for 10000
 error: lost connection to pod
 error: lost connection to pod
 error: lost connection to pod
+Forwarding from 127.0.0.1:10000 -> 10000
+Forwarding from [::1]:10000 -> 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
