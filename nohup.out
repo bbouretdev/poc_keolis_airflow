@@ -206,3 +206,97 @@ Handling connection for 8080
 Handling connection for 8080
 Handling connection for 8080
 E0813 10:43:00.008636   11028 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:47156: write tcp4 127.0.0.1:8080->127.0.0.1:47156: write: broken pipe"
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+E0813 10:48:24.957391   11028 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:38872: write tcp4 127.0.0.1:8080->127.0.0.1:38872: write: broken pipe"
+Handling connection for 8080
+Forwarding from 127.0.0.1:10000 -> 10000
+Forwarding from [::1]:10000 -> 10000
+Handling connection for 8080
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Forwarding from 127.0.0.1:5434 -> 5432
+Forwarding from [::1]:5434 -> 5432
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 10000
+Handling connection for 5434
+Handling connection for 10000
+Handling connection for 5434
+Handling connection for 10000
+Handling connection for 5434
+Handling connection for 10000
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 10000
+E0813 16:41:38.909046  448994 portforward.go:522] "Unhandled Error" err="an error occurred forwarding 10000 -> 10000: error forwarding port 10000 to pod fd0d4135f2cfa73f6fed690cf833f147e76b1cb84c3fa1846049b2ddc0632d06, uid : failed to find sandbox \"fd0d4135f2cfa73f6fed690cf833f147e76b1cb84c3fa1846049b2ddc0632d06\" in store: not found"
+error: lost connection to pod
+Forwarding from 127.0.0.1:10000 -> 10000
+Forwarding from [::1]:10000 -> 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 10000
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 10000
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 5434
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod

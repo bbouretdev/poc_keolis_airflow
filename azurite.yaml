@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azurite
+  namespace: airflow
+  labels:
+    app: azurite
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: azurite
+  template:
+    metadata:
+      labels:
+        app: azurite
+    spec:
+      containers:
+        - name: azurite
+          image: mcr.microsoft.com/azure-storage/azurite:latest
+          command: ["azurite"]
+          args:
+            - "--blobHost"
+            - "0.0.0.0"
+            - "--queueHost"
+            - "0.0.0.0"
+            - "--tableHost"
+            - "0.0.0.0"
+            - "--skipApiVersionCheck"   # <-- Désactive la vérification stricte de version d'API
+          ports:
+            - name: blob
+              containerPort: 10000
+            - name: queue
+              containerPort: 10001
+            - name: table
+              containerPort: 10002
+          volumeMounts:
+            - name: azurite-data
+              mountPath: /data
+      volumes:
+        - name: azurite-data
+          persistentVolumeClaim:
+            claimName: azurite-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: azurite
+  namespace: airflow
+spec:
+  type: ClusterIP
+  ports:
+    - port: 10000
+      targetPort: 10000
+      name: blob
+    - port: 10001
+      targetPort: 10001
+      name: queue
+    - port: 10002
+      targetPort: 10002
+      name: table
+  selector:
+    app: azurite
