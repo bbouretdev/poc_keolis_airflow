@@ -6,7 +6,7 @@ params:
   ID_PIPELINE: "adls_users_pipeline"
   USE_AZURITE: "true"                   # Passer à "false" en Prod Azure
   AZURE_CONN_ID: "azure_storage_default"
-  POSTGRESQL_CIBLE: "postgres_target"
+  POSTGRESQL_CIBLE: "postgres_cible"
   
   CONTENEUR_AZURE: "source-data"
   PATTERN_FICHIER: "*.parquet"
