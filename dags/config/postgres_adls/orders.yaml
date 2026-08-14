@@ -1,4 +1,4 @@
-dag_id: "postgres_orders_export"
+dag_id: "postgres_to_adls_orders"
 description: "Exportation de la table Postgres items vers un fichier Parquet dans Azurite/ADLS"
 schedule: null
 
