@@ -1,4 +1,4 @@
-dag_id: "adls_to_postgres_all_parquet"
+dag_id: "adls_to_postgres_users_items"
 description: "Ingestion des fichiers Parquet de test depuis ADLS/Azurite vers Postgres"
 schedule: null
 
@@ -9,7 +9,7 @@ params:
   POSTGRESQL_CIBLE: "postgres_cible"
   
   CONTENEUR_AZURE: "source-data"
-  PATTERN_FICHIER: "*.parquet"
+  PATTERN_FICHIER: "users_test.parquet:users, items.parquet:items"
   
   SCHEMA_CIBLE: "dlt"
   STRATEGIE_ECRITURE: "replace"

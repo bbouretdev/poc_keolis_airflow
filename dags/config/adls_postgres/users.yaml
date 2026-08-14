@@ -9,8 +9,7 @@ params:
   POSTGRESQL_CIBLE: "postgres_cible"
   
   CONTENEUR_AZURE: "source-data"
-  PATTERN_FICHIER: "users_test.parquet"
+  PATTERN_FICHIER: "users_test.parquet:users"
   
   SCHEMA_CIBLE: "dlt"
-  TABLE_CIBLE: "users_test"
   STRATEGIE_ECRITURE: "replace"
