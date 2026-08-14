@@ -24,6 +24,8 @@ def create_dag(
             "RUNTIME__LOG_LEVEL": "INFO",
             "RUNTIME__DLTHUB_TELEMETRY": "false",
             "RUNTIME__WORKERS": "1",
+            # Limite la taille de chaque instruction INSERT envoyée à Postgres
+            "DESTINATION__POSTGRES_DEST__MAX_TEXT_DATA_PAGE_SIZE": "5242880",  # 5 Mo
 
             # 1. Source Postgres
             "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
