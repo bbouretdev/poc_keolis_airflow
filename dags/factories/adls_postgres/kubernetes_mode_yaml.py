@@ -23,9 +23,9 @@ def create_dag(
         dlt_env_vars = {
             "RUNTIME__LOG_LEVEL": "INFO",
             "RUNTIME__DLTHUB_TELEMETRY": "false",
-            "RUNTIME__WORKERS": "1",
+            "RUNTIME__WORKERS": "4",
             # Limite la taille de chaque instruction INSERT envoyée à Postgres
-            "DESTINATION__POSTGRES_DEST__MAX_TEXT_DATA_PAGE_SIZE": "5242880",  # 5 Mo
+            # "DESTINATION__POSTGRES_DEST__MAX_TEXT_DATA_PAGE_SIZE": "5242880",  # 5 Mo
 
             # Mode de fonctionnement Storage (Azurite vs Azure Cloud)
             "USE_AZURITE": "{{ params.USE_AZURITE }}",

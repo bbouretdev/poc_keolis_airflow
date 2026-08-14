@@ -3,7 +3,7 @@ description: "Exportation de la table Postgres items vers un fichier Parquet dan
 schedule: null
 
 params:
-  ID_PIPELINE: "pg_items_export_pipeline"
+  ID_PIPELINE: "postgres_to_adls_orders"
   POSTGRESQL_SOURCE: "postgres_source"
   
   USE_AZURITE: "true"
