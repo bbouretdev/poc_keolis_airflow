@@ -45,6 +45,7 @@ def build_adls2pg_params(raw_params: dict) -> dict:
         "AZURE_CONN_ID": Param(raw_params.get("AZURE_CONN_ID", "azure_storage_default"), type="string"),
         "POSTGRESQL_CIBLE": Param(raw_params.get("POSTGRESQL_CIBLE", "postgres_cible"), type="string"),
         "CONTENEUR_AZURE": Param(raw_params.get("CONTENEUR_AZURE", "source-data"), type="string"),
+        # Accepte "*.parquet", "test.parquet,items.parquet" ou "users_*.parquet,orders.parquet"
         "PATTERN_FICHIER": Param(raw_params.get("PATTERN_FICHIER", "*.parquet"), type="string"),
         "SCHEMA_CIBLE": Param(raw_params.get("SCHEMA_CIBLE", "dlt"), type="string"),
         "TABLE_CIBLE": Param(raw_params.get("TABLE_CIBLE", "users_test"), type="string"),
@@ -61,9 +62,9 @@ def build_pg2adls_params(raw_params: dict) -> dict:
         "USE_AZURITE": Param(raw_params.get("USE_AZURITE", "true"), type="string", enum=["true", "false"]),
         "AZURE_CONN_ID": Param(raw_params.get("AZURE_CONN_ID", "azure_storage_default"), type="string"),
         "SCHEMA_SOURCE": Param(raw_params.get("SCHEMA_SOURCE", "public"), type="string"),
-        "TABLE_SOURCE": Param(raw_params.get("TABLE_SOURCE", "items"), type="string"),
+        # Accepte "orders", "orders,items,customers" ou "*"
+        "TABLE_SOURCE": Param(raw_params.get("TABLE_SOURCE", "*"), type="string"),
         "CONTENEUR_AZURE": Param(raw_params.get("CONTENEUR_AZURE", "target-data"), type="string"),
-        "NOM_FICHIER_CIBLE": Param(raw_params.get("NOM_FICHIER_CIBLE", "items_export"), type="string"),
         "MOTEUR_DLT": Param(default=raw_params.get("MOTEUR_DLT", "connectorx"), type="string"),
         "TAILLE_LOT": Param(raw_params.get("TAILLE_LOT", 100000), type="integer"),
     }

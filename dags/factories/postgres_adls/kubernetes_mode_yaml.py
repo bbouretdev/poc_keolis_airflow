@@ -52,9 +52,8 @@ def create_dag(
             # 3. Paramètres applicatifs du script export
             "DLT_PIPELINE_ID": "{{ params.ID_PIPELINE }}",
             "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
-            "DLT_SOURCE_TABLE": "{{ params.TABLE_SOURCE }}",
+            "DLT_SOURCE_TABLE": "{{ params.TABLE_SOURCE }}",  # Transmet "orders", "orders,items" ou "*"
             "DLT_TARGET_PATH": "{{ params.CONTENEUR_AZURE }}",
-            "DLT_TARGET_FILENAME": "{{ params.NOM_FICHIER_CIBLE }}",
             "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
             "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
         }
