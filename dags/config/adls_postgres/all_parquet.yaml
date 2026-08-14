@@ -1,4 +1,4 @@
-dag_id: "adls_to_postgres_users"
+dag_id: "adls_to_postgres_all_parquet"
 description: "Ingestion des fichiers Parquet de test depuis ADLS/Azurite vers Postgres"
 schedule: null
 
