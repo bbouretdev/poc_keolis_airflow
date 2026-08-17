@@ -1,8 +1,8 @@
-dag_id: "items"
+dag_id: "postgres_to_postgres__items"
 description: "Incrémentation et mise à jour de la table commandes"
 schedule: "0 2 * * *"
 params:
-  ID_PIPELINE: "ITEMS"
+  ID_PIPELINE: "postgres_to_postgres__items"
   POSTGRESQL_SOURCE: "postgres_source"
   POSTGRESQL_CIBLE: "postgres_cible"
   SCHEMA_SOURCE: "dlt"

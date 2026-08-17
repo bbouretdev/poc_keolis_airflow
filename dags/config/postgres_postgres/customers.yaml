@@ -1,8 +1,8 @@
-dag_id: "customers"
+dag_id: "postgres_to_postgres__customers"
 description: "Incrémentation et mise à jour de la table commandes"
 schedule: "0 2 * * *"
 params:
-  ID_PIPELINE: "CUSTOMERS"
+  ID_PIPELINE: "postgres_to_postgres__customers"
   POSTGRESQL_SOURCE: "postgres_source"
   POSTGRESQL_CIBLE: "postgres_cible"
   SCHEMA_SOURCE: "dlt"

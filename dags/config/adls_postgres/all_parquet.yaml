@@ -1,9 +1,9 @@
-dag_id: "adls_to_postgres_all_parquet"
+dag_id: "adls_to_postgres__all_parquet"
 description: "Ingestion des fichiers Parquet de test depuis ADLS/Azurite vers Postgres"
 schedule: null
 
 params:
-  ID_PIPELINE: "adls_to_postgres_all_parquet"
+  ID_PIPELINE: "adls_to_postgres__all_parquet"
   USE_AZURITE: "true"                   # Passer à "false" en Prod Azure
   AZURE_CONN_ID: "azure_storage_default"
   POSTGRESQL_CIBLE: "postgres_cible"

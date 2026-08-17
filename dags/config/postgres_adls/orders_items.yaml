@@ -1,9 +1,9 @@
-dag_id: "postgres_to_adls_orders_items"
+dag_id: "postgres_to_adls__orders_items"
 description: "Exportation de la table Postgres items vers un fichier Parquet dans Azurite/ADLS"
 schedule: null
 
 params:
-  ID_PIPELINE: "postgres_to_adls_orders_items"
+  ID_PIPELINE: "postgres_to_adls__orders_items"
   POSTGRESQL_SOURCE: "postgres_source"
   
   USE_AZURITE: "true"
