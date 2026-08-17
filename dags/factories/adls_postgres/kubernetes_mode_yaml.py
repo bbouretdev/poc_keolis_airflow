@@ -1,65 +1,81 @@
+import json
+from datetime import datetime
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 
-def parse_mapping(pattern_raw: str) -> list:
-    """Découpe 'users_test.parquet:users, items.parquet:items' en liste de tuples [(fichier, table)]."""
-    items = []
-    for token in pattern_raw.split(","):
-        if ":" in token:
-            file_pattern, table_name = token.split(":", 1)
-            items.append((file_pattern.strip(), table_name.strip()))
-        else:
-            p = token.strip()
-            items.append((p, p.replace(".parquet", "")))
-    return items
 
-def create_dag(dag_id: str, description: str, schedule, params: dict) -> DAG:
+def create_dag(
+    dag_id: str,
+    description: str,
+    params: dict,
+    schedule=None,
+):
+
     with DAG(
         dag_id=dag_id,
         description=description,
+        start_date=datetime(2024, 1, 1),
         schedule=schedule,
-        params=params,
         catchup=False,
+        params=params,
     ) as dag:
 
-        # Extraction des couples (fichier, table)
-        pattern_raw = params["PATTERN_FICHIER"].value if hasattr(params["PATTERN_FICHIER"], "value") else params["PATTERN_FICHIER"]
-        file_mappings = parse_mapping(pattern_raw)
+        dlt_env_vars = {
+            "RUNTIME__LOG_LEVEL": "INFO",
+            "RUNTIME__DLTHUB_TELEMETRY": "false",
+            "RUNTIME__WORKERS": "4",
+            # Limite la taille de chaque instruction INSERT envoyée à Postgres
+            # "DESTINATION__POSTGRES_DEST__MAX_TEXT_DATA_PAGE_SIZE": "5242880",  # 5 Mo
 
-        previous_task = None
-
-        for file_pattern, table_name in file_mappings:
-            base_pipeline_id = params["ID_PIPELINE"].value if hasattr(params["ID_PIPELINE"], "value") else params["ID_PIPELINE"]
+            # Mode de fonctionnement Storage (Azurite vs Azure Cloud)
+            "USE_AZURITE": "{{ params.USE_AZURITE }}",
+            "AZURE_STORAGE_CONNECTION_STRING": "{{ conn.get(params.AZURE_CONN_ID).extra_dejson.get('connection_string', '') }}",
             
-            # 🔴 ID de pipeline DLT unique et isolé par table
-            table_pipeline_id = f"{base_pipeline_id}__{table_name}"
+            # Credentials ADLS Gen2 Native (si mode Cloud)
+            "SOURCES__FILESYSTEM__AZURE_STORAGE_ACCOUNT_NAME": "{{ conn.get(params.AZURE_CONN_ID).login }}",
+            "SOURCES__FILESYSTEM__AZURE_STORAGE_ACCOUNT_KEY": "{{ conn.get(params.AZURE_CONN_ID).password }}",
 
-            # Copie des variables d'environnement ajustées pour ce Pod spécifique
-            task_env_vars = dlt_env_vars.copy()
-            task_env_vars["DLT_FILE_GLOB"] = f"{file_pattern}:{table_name}"
-            task_env_vars["DLT_PIPELINE_ID"] = table_pipeline_id
-            
-            # Bridages de sécurité pour Postgres
-            task_env_vars["RUNTIME__WORKERS"] = "1"
-            task_env_vars["DESTINATION__POSTGRES_DEST__MAX_TEXT_DATA_PAGE_SIZE"] = "1048576"
+            # Destination Postgres (Standardisée)
+            "DESTINATION__POSTGRES_DEST__DESTINATION_TYPE": "postgres",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DRIVERNAME": "postgresql",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__DATABASE": "{{ conn.get(params.POSTGRESQL_CIBLE).schema }}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__USERNAME": "{{ conn.get(params.POSTGRESQL_CIBLE).login }}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PASSWORD": "{{ conn.get(params.POSTGRESQL_CIBLE).password }}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_CIBLE).host }}",
+            "DESTINATION__POSTGRES_DEST__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_CIBLE).port or 5432 }}",
 
-            # 🔴 Tâche Airflow = 1 Pod K8s dédié
-            task = KubernetesPodOperator(
-                task_id=f"ingest_{table_name}",
-                name=f"dlt-{dag_id}-{table_name}".replace("_", "-").replace(".", "-").lower(),
-                namespace="airflow",
-                image="dlt-ingestion-engine:dev",
-                image_pull_policy="Never",
-                env_vars=task_env_vars,
-                cmds=["/bin/bash", "-c"],
-                arguments=[bash_cmd],
-                get_logs=True,
-                is_delete_operator_pod=True,
-            )
+            # Configs spécifiques au flux ADLS
+            "DLT_PIPELINE_ID": "{{ params.ID_PIPELINE }}",
+            "DLT_AZURE_CONTAINER": "{{ params.CONTENEUR_AZURE }}",
+            "DLT_FILE_GLOB": "{{ params.PATTERN_FICHIER }}",
+            "DLT_TARGET_SCHEMA": "{{ params.SCHEMA_CIBLE }}",
+            "DLT_TARGET_TABLE": "{{ params.TABLE_CIBLE }}",
+            "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
+        }
 
-            # 🔴 Chainage Sécurité : Exécution Séquentielle (Pod 1 puis Pod 2)
-            if previous_task:
-                previous_task >> task
-            previous_task = task
+        git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
+
+        bash_cmd = f"""
+        set -e
+        echo "=== Cloning repository ==="
+        git clone {git_host} /tmp/repo
+        cd /tmp/repo
+
+        echo "=== Running DLT ADLS -> Postgres generic script ==="
+        python pipelines/adls_postgres/generic.py
+        """
+
+        run_pod = KubernetesPodOperator(
+            task_id="run_dlt_adls_ingestion",
+            name=f"dlt-pod-{dag_id}".replace("_", "-").lower(),
+            namespace="airflow",
+            image="dlt-ingestion-engine:dev",
+            image_pull_policy="Never",
+            env_vars=dlt_env_vars,
+            cmds=["/bin/bash", "-c"],
+            arguments=[bash_cmd],
+            get_logs=True,
+            is_delete_operator_pod=True,
+        )
 
     return dag
