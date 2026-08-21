@@ -1,5 +1,5 @@
 dag_id: "postgres_to_adls__orders_items"
-description: "Exportation de la table Postgres items vers un fichier Parquet dans Azurite/ADLS"
+description: "Exportation des tables orders et items vers Parquet"
 schedule: null
 
 params:
@@ -11,10 +11,14 @@ params:
   AZURE_CONN_ID: "azure_storage_default"
   
   SCHEMA_SOURCE: "dlt"
-  TABLE_SOURCE: "orders,items"
+  
+  # Liste déclarative des tables avec leur nommage personnalisé
+  TABLES:
+    - source: "orders"
+      target_name: "commandes_export"
+    - source: "items"
+      target_name: "articles_export"
   
   CONTENEUR_AZURE: "target-data"
-  NOM_FICHIER_CIBLE: "items_export"
-  
   MOTEUR_DLT: "connectorx"
   TAILLE_LOT: 100000

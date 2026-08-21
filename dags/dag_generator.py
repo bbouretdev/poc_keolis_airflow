@@ -62,8 +62,10 @@ def build_pg2adls_params(raw_params: dict) -> dict:
         "USE_AZURITE": Param(raw_params.get("USE_AZURITE"), type="string", enum=["true", "false"]),
         "AZURE_CONN_ID": Param(raw_params.get("AZURE_CONN_ID"), type="string"),
         "SCHEMA_SOURCE": Param(raw_params.get("SCHEMA_SOURCE"), type="string"),
-        # Accepte "orders", "orders,items,customers" ou "*"
-        "TABLE_SOURCE": Param(raw_params.get("TABLE_SOURCE"), type="string"),
+        
+        # Paramètre complexe (liste d'objets tables/target_name)
+        "TABLES": Param(raw_params.get("TABLES", []), type=["array", "null"]),
+        
         "CONTENEUR_AZURE": Param(raw_params.get("CONTENEUR_AZURE"), type="string"),
         "MOTEUR_DLT": Param(default=raw_params.get("MOTEUR_DLT"), type="string"),
         "TAILLE_LOT": Param(raw_params.get("TAILLE_LOT"), type="integer"),

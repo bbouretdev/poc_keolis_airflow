@@ -14,7 +14,6 @@ params:
   TABLE_SOURCE: "orders"
   
   CONTENEUR_AZURE: "target-data"
-  NOM_FICHIER_CIBLE: "items_export"
   
   MOTEUR_DLT: "connectorx"
   TAILLE_LOT: 100000
