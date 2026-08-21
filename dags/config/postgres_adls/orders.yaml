@@ -4,6 +4,7 @@ schedule: null
 
 params:
   ID_PIPELINE: "postgres_to_adls__orders"
+  GIT_CONN_ID: "git-dlt"
   POSTGRESQL_SOURCE: "postgres_source"
   
   USE_AZURITE: "true"
