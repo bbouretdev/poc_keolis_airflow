@@ -61,11 +61,12 @@ def create_dag(
         }
 
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
+        git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
 
         bash_cmd = f"""
         set -e
         echo "=== Cloning repository ==="
-        git clone {git_host} /tmp/repo
+        git clone -b {git_branch} {git_host} /tmp/repo
         cd /tmp/repo
 
         echo "=== Running DLT Postgres -> ADLS export script ==="
