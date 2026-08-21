@@ -20,5 +20,5 @@ params:
       target_name: "articles_export"
   
   CONTENEUR_AZURE: "target-data"
-  MOTEUR_DLT: "connectorx"
+  MOTEUR_DLT: "pyarrow"
   TAILLE_LOT: 100000

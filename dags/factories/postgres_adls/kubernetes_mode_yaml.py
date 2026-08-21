@@ -16,6 +16,7 @@ def create_dag(
         description=description,
         start_date=datetime(2024, 1, 1),
         schedule=schedule,
+        max_active_tasks=3,
         catchup=False,
         params=params,
     ) as dag:
