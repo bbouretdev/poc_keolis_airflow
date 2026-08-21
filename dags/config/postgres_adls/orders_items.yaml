@@ -14,10 +14,10 @@ params:
 
   TABLES:
     - source: "orders"
-      target_name: "pyarrow/commandes_export"
+      target_name: "connectorx/commandes_export"
     - source: "items"
-      target_name: "pyarrow/articles_export"
+      target_name: "connectorx/articles_export"
   
   CONTENEUR_AZURE: "target-data"
-  MOTEUR_DLT: "pyarrow"
+  MOTEUR_DLT: "connectorx"
   TAILLE_LOT: 100000
