@@ -373,3 +373,23 @@ Handling connection for 8080
 E0821 11:37:55.703787    8967 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:39106: write tcp4 127.0.0.1:8080->127.0.0.1:39106: write: broken pipe"
 Handling connection for 8080
 Handling connection for 8080
+Handling connection for 8080
+E0821 11:46:00.894307    8967 portforward.go:522] "Unhandled Error" err="an error occurred forwarding 8080 -> 8080: error forwarding port 8080 to pod 497ea5337e9cd52aa95f40a5ba9b8bca77351f8d86968f4853c109989cdd04ad, uid : failed to find sandbox \"497ea5337e9cd52aa95f40a5ba9b8bca77351f8d86968f4853c109989cdd04ad\" in store: not found"
+error: lost connection to pod
+Unable to listen on port 5434: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:5434: bind: address already in use unable to create listener: Error listen tcp6 [::1]:5434: bind: address already in use]
+Unable to listen on port 10000: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:10000: bind: address already in use unable to create listener: Error listen tcp6 [::1]:10000: bind: address already in use]
+Unable to listen on port 9001: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:9001: bind: address already in use unable to create listener: Error listen tcp6 [::1]:9001: bind: address already in use]
+Unable to listen on port 5433: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:5433: bind: address already in use unable to create listener: Error listen tcp6 [::1]:5433: bind: address already in use]
+error: unable to listen on any of the requested ports: [{9001 9001}]
+error: unable to listen on any of the requested ports: [{5434 5432}]
+error: unable to listen on any of the requested ports: [{10000 10000}]
+error: unable to listen on any of the requested ports: [{5433 5432}]
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
