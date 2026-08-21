@@ -14,9 +14,9 @@ params:
 
   TABLES:
     - source: "orders"
-      target_name: "orders/commandes_export"
+      target_name: "pyarrow/commandes_export"
     - source: "items"
-      target_name: "items/articles_export"
+      target_name: "pyarrow/articles_export"
   
   CONTENEUR_AZURE: "target-data"
   MOTEUR_DLT: "pyarrow"
