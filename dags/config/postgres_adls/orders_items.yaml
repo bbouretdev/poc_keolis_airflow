@@ -11,13 +11,12 @@ params:
   AZURE_CONN_ID: "azure_storage_default"
   
   SCHEMA_SOURCE: "dlt"
-  
-  # Liste déclarative des tables avec leur nommage personnalisé
+
   TABLES:
     - source: "orders"
-      target_name: "commandes_export"
+      target_name: "orders/commandes_export"
     - source: "items"
-      target_name: "articles_export"
+      target_name: "items/articles_export"
   
   CONTENEUR_AZURE: "target-data"
   MOTEUR_DLT: "pyarrow"
