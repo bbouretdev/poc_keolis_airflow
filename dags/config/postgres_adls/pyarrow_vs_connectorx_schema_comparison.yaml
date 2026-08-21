@@ -14,8 +14,8 @@ params:
 
   TABLES:
     - source: "test_precision_moteurs"
-      target_name: "connectorx/test_precision_moteurs"
+      target_name: "pyarrow/test_precision_moteurs"
   
   CONTENEUR_AZURE: "target-data"
-  MOTEUR_DLT: "connectorx"
+  MOTEUR_DLT: "pyarrow"
   TAILLE_LOT: 100000
