@@ -1,0 +1,21 @@
+dag_id: "postgres_to_adls__pyarrow_vs_connectorx_schema_comparison"
+description: "Exportation des tables orders et items vers Parquet"
+schedule: null
+
+params:
+  ID_PIPELINE: "postgres_to_adls__pyarrow_vs_connectorx_schema_comparison"
+  GIT_CONN_ID: "git-dlt"
+  POSTGRESQL_SOURCE: "postgres_source"
+  
+  USE_AZURITE: "true"
+  AZURE_CONN_ID: "azure_storage_default"
+  
+  SCHEMA_SOURCE: "public"
+
+  TABLES:
+    - source: "test_precision_moteurs"
+      target_name: "connectorx/test_precision_moteurs"
+  
+  CONTENEUR_AZURE: "target-data"
+  MOTEUR_DLT: "connectorx"
+  TAILLE_LOT: 100000
