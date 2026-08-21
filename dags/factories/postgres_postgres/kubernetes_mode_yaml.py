@@ -24,8 +24,6 @@ def create_dag(
             "RUNTIME__LOG_LEVEL": "INFO",
             "RUNTIME__DLTHUB_TELEMETRY": "false",
             "RUNTIME__WORKERS": "4",
-            # Limite la taille de chaque instruction INSERT envoyée à Postgres
-            # "DESTINATION__POSTGRES_DEST__MAX_TEXT_DATA_PAGE_SIZE": "5242880",  # 5 Mo
 
             # Source Postgres (Évaluation Jinja au runtime)
             "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
