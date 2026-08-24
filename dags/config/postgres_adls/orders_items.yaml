@@ -11,10 +11,11 @@ params:
   AZURE_CONN_ID: "azure_storage_default"
   
   SCHEMA_SOURCE: "dlt"
+  DATASET_NAME: "billetique"  # <-- Domaine métier (premier sous-dossier)
 
   TABLES:
     - source: "orders"
-      target_name: "billetique/ventes/commandes_export"
+      target_name: "ventes/commandes_export"
     - source: "items"
       target_name: "referentiel/articles_export"
   

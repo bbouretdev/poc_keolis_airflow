@@ -64,6 +64,7 @@ def create_dag(
                 # Variables applicatives DLT
                 "DLT_PIPELINE_ID": f"{{{{ params.ID_PIPELINE }}}}_{clean_task_id}",
                 "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
+                "DLT_DATASET_NAME": "{{ params.DATASET_NAME }}",
                 "DLT_SOURCE_TABLE": table_source,
                 "DLT_TARGET_NAME": target_name,
                 "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
@@ -71,10 +72,8 @@ def create_dag(
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
-                "DESTINATION__FILESYSTEM__LAYOUT": "{table_name}/{load_id}.{file_id}.{ext}",
             }
 
-            # --- GESTION AZURITE VS ADLS PROD CÔTÉ ORCHESTRATION ---
             use_azurite_str = str(params.get("USE_AZURITE")).lower()
             
             if use_azurite_str == "true":

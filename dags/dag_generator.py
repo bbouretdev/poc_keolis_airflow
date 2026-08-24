@@ -19,8 +19,8 @@ def build_pg2adls_params(raw_params: dict) -> dict:
 
     required_keys = [
         "ID_PIPELINE", "GIT_CONN_ID", "POSTGRESQL_SOURCE", "USE_AZURITE",
-        "AZURE_CONN_ID", "SCHEMA_SOURCE", "TABLES", "CONTENEUR_AZURE",
-        "MOTEUR_DLT", "STRATEGIE_ECRITURE", "TAILLE_LOT"
+        "AZURE_CONN_ID", "SCHEMA_SOURCE", "DATASET_NAME", "TABLES",
+        "CONTENEUR_AZURE", "MOTEUR_DLT", "STRATEGIE_ECRITURE", "TAILLE_LOT"
     ]
     missing = [k for k in required_keys if k not in raw_params]
     if missing:
@@ -33,6 +33,7 @@ def build_pg2adls_params(raw_params: dict) -> dict:
         "USE_AZURITE": Param(str(raw_params["USE_AZURITE"]).lower(), type="string", enum=["true", "false"]),
         "AZURE_CONN_ID": Param(raw_params["AZURE_CONN_ID"], type="string"),
         "SCHEMA_SOURCE": Param(raw_params["SCHEMA_SOURCE"], type="string"),
+        "DATASET_NAME": Param(raw_params["DATASET_NAME"], type="string"),
         "TABLES": Param(raw_params["TABLES"], type="array", description="Liste des objets {source, target_name}"),
         "CONTENEUR_AZURE": Param(raw_params["CONTENEUR_AZURE"], type="string"),
         "MOTEUR_DLT": Param(raw_params["MOTEUR_DLT"], type="string"),
