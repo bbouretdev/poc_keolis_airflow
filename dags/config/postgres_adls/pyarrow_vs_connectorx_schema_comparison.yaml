@@ -18,4 +18,5 @@ params:
   
   CONTENEUR_AZURE: "target-data"
   MOTEUR_DLT: "pyarrow"
+  STRATEGIE_ECRITURE: "replace"
   TAILLE_LOT: 100000
