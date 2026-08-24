@@ -71,6 +71,7 @@ def create_dag(
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
+                "DESTINATION__FILESYSTEM__LAYOUT": "{table_name}/{load_id}.{file_id}.{ext}",
             }
 
             # --- GESTION AZURITE VS ADLS PROD CÔTÉ ORCHESTRATION ---
