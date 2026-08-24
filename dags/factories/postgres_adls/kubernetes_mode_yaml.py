@@ -21,9 +21,11 @@ def create_dag(
         params=params,
     ) as dag:
 
-        # 1. Extraction de la liste des tables depuis les params
         raw_tables_param = params.get("TABLES")
-        tables_list = raw_tables_param.value if hasattr(raw_tables_param, "value") else (raw_tables_param or [])
+        tables_list = raw_tables_param.value if hasattr(raw_tables_param, "value") else raw_tables_param
+
+        if not tables_list or not isinstance(tables_list, list):
+            raise ValueError("❌ Le paramètre 'TABLES' doit être une liste non vide d'objets dans le YAML.")
 
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
         git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
@@ -38,16 +40,15 @@ def create_dag(
         python pipelines/postgres_adls/generic.py
         """
 
-        # 2. Construction des variables d'environnement du Pod
         for table_item in tables_list:
-            if isinstance(table_item, dict):
-                table_source = table_item.get("source")
-                target_name = table_item.get("target_name", table_source)
-            else:
-                table_source = str(table_item)
-                target_name = table_source
+            if not isinstance(table_item, dict) or "source" not in table_item or "target_name" not in table_item:
+                raise KeyError("❌ Chaque élément de 'TABLES' doit obligatoirement contenir 'source' et 'target_name'.")
 
-            clean_table_id = table_source.lower().replace("_", "-")
+            table_source = table_item["source"]
+            target_name = table_item["target_name"]  # Peut être "ventes/2026/commandes_export"
+
+            # Nettoyage pour les noms de tâches et Pods Kubernetes (car / et _ y sont interdits/déconseillés)
+            clean_task_id = target_name.lower().replace("/", "-").replace("_", "-")
 
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
@@ -60,27 +61,24 @@ def create_dag(
                 "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": "{{ conn.get(params.POSTGRESQL_SOURCE).login }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__PASSWORD": "{{ conn.get(params.POSTGRESQL_SOURCE).password }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
-                "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port or 5432 }}",
+                "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port }}",
 
                 # Variables applicatives DLT
-                "DLT_PIPELINE_ID": f"{{{{ params.ID_PIPELINE }}}}_{clean_table_id}",
+                "DLT_PIPELINE_ID": f"{{{{ params.ID_PIPELINE }}}}_{clean_task_id}",
                 "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
                 "DLT_SOURCE_TABLE": table_source,
                 "DLT_TARGET_NAME": target_name,
                 "DLT_TARGET_PATH": "{{ params.CONTENEUR_AZURE }}",
                 "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
-                "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE | default('replace') }}",
+                "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination Azure générique
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
 
-            # 3. Injection conditionnelle des credentials d'infrastructure
-            use_azurite_str = str(params.get("USE_AZURITE", "true")).lower()
+            use_azurite_str = str(params.get("USE_AZURITE")).lower()
             
             if use_azurite_str == "true":
-                # Mode local Azurite (HTTP / Endpoint dédié pour fsspec)
                 az_conn = (
                     "DefaultEndpointsProtocol=http;"
                     "AccountName=devstoreaccount1;"
@@ -99,23 +97,22 @@ def create_dag(
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_EXTRA_KWARGS": extra_kwargs,
                 })
             else:
-                # Mode Production ADLS Gen2 (Connexion Azure réelle)
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
                         "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
-                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login or '' }}"
+                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login }}"
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
-                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password or '' }}"
+                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
                     ),
                 })
 
             KubernetesPodOperator(
-                task_id=f"run_dlt_{clean_table_id}",
-                name=f"dlt-pod-{dag_id}-{clean_table_id}".replace("_", "-").lower(),
+                task_id=f"run_dlt_{clean_task_id}",
+                name=f"dlt-pod-{dag_id}-{clean_task_id}".replace("_", "-").lower(),
                 namespace="airflow",
                 image="dlt-ingestion-engine:dev",
                 image_pull_policy="Never",

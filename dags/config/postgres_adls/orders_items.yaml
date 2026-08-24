@@ -1,5 +1,5 @@
 dag_id: "postgres_to_adls__orders_items"
-description: "Exportation des tables orders et items vers Parquet"
+description: "Exportation des tables orders et items vers Parquet sur ADLS"
 schedule: null
 
 params:
@@ -14,9 +14,9 @@ params:
 
   TABLES:
     - source: "orders"
-      target_name: "commandes_export"
+      target_name: "ventes/2026/commandes_export"
     - source: "items"
-      target_name: "articles_export"
+      target_name: "referentiel/articles_export"
   
   CONTENEUR_AZURE: "target-data"
   MOTEUR_DLT: "pyarrow"
