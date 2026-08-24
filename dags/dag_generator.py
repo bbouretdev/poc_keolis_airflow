@@ -26,21 +26,6 @@ def build_pg2adls_params(raw_params: dict) -> dict:
     if missing:
         raise KeyError(f"❌ Paramètres manquants dans le YAML : {missing}")
 
-    # Récupération des valeurs YAML servant de valeurs par défaut dans l'UI Airflow
-    default_moteur = str(raw_params["MOTEUR_DLT"]).lower()
-    default_strategie = str(raw_params["STRATEGIE_ECRITURE"]).lower()
-
-    # Alignement de l'option par défaut en tête de liste pour l'UI Airflow
-    moteur_options = ["pyarrow", "connectorx"]
-    if default_moteur in moteur_options:
-        moteur_options.remove(default_moteur)
-        moteur_options.insert(0, default_moteur)
-
-    strategie_options = ["replace", "append", "merge"]
-    if default_strategie in strategie_options:
-        strategie_options.remove(default_strategie)
-        strategie_options.insert(0, default_strategie)
-
     return {
         "ID_PIPELINE": Param(raw_params["ID_PIPELINE"], type="string"),
         "GIT_CONN_ID": Param(raw_params["GIT_CONN_ID"], type="string"),
@@ -48,19 +33,10 @@ def build_pg2adls_params(raw_params: dict) -> dict:
         "USE_AZURITE": Param(str(raw_params["USE_AZURITE"]).lower(), type="string", enum=["true", "false"]),
         "AZURE_CONN_ID": Param(raw_params["AZURE_CONN_ID"], type="string"),
         "SCHEMA_SOURCE": Param(raw_params["SCHEMA_SOURCE"], type="string"),
-        
-        "TABLES": Param(
-            raw_params["TABLES"],
-            type="array",
-            description="Liste des tables et paramètres d'incrémentalité",
-        ),
-        
+        "TABLES": Param(raw_params["TABLES"], type="array", description="Liste des objets {source, target_name}"),
         "CONTENEUR_AZURE": Param(raw_params["CONTENEUR_AZURE"], type="string"),
-        
-        # Champs sous forme de menu déroulant (enum)
-        "MOTEUR_DLT": Param(default_moteur, type="string", enum=moteur_options, description="Moteur d'extraction DLT"),
-        "STRATEGIE_ECRITURE": Param(default_strategie, type="string", enum=strategie_options, description="Mode d'écriture globale sur ADLS"),
-        
+        "MOTEUR_DLT": Param(raw_params["MOTEUR_DLT"], type="string"),
+        "STRATEGIE_ECRITURE": Param(raw_params["STRATEGIE_ECRITURE"], type="string"),
         "TAILLE_LOT": Param(raw_params["TAILLE_LOT"], type="integer"),
     }
 

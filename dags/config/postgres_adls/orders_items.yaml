@@ -1,5 +1,5 @@
 dag_id: "postgres_to_adls__orders_items"
-description: "Exportation des tables orders et items avec gestion de l'incrémentalité"
+description: "Exportation des tables orders et items vers Parquet dans ADLS"
 schedule: null
 
 params:
@@ -13,16 +13,10 @@ params:
   SCHEMA_SOURCE: "dlt"
 
   TABLES:
-    # Exemple 1 : Table chargée en incrémental avec Watermark Minuit
     - source: "orders"
-      target_name: "ventes/2026/commandes_export"
-      write_strategy: "append"
-      cursor_column: "created_at"
-
-    # Exemple 2 : Table de référence chargée en replace complet
+      target_name: "billetique/ventes/commandes_export"
     - source: "items"
       target_name: "referentiel/articles_export"
-      write_strategy: "replace"
   
   CONTENEUR_AZURE: "target-data"
   MOTEUR_DLT: "pyarrow"
