@@ -548,3 +548,39 @@ Handling connection for 8080
 Handling connection for 8080
 Handling connection for 8080
 Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+E0821 15:20:49.964557  373816 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:53062: write tcp4 127.0.0.1:8080->127.0.0.1:53062: write: broken pipe"
+Handling connection for 8080
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 10000
+Handling connection for 8080
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from 127.0.0.1:5434 -> 5432
+Forwarding from [::1]:8080 -> 8080
+Forwarding from [::1]:5434 -> 5432
+Forwarding from 127.0.0.1:5433 -> 5432
+Forwarding from [::1]:5433 -> 5432
+Forwarding from 127.0.0.1:10000 -> 10000
+Forwarding from [::1]:10000 -> 10000
+Forwarding from 127.0.0.1:9001 -> 9001
+Forwarding from [::1]:9001 -> 9001
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080

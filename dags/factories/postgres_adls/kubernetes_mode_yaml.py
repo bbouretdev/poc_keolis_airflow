@@ -21,7 +21,7 @@ def create_dag(
         params=params,
     ) as dag:
 
-        # 1. Extraction de la liste des tables depuis le dictionnaire params
+        # 1. Extraction de la liste des tables depuis les params
         raw_tables_param = params.get("TABLES")
         tables_list = raw_tables_param.value if hasattr(raw_tables_param, "value") else (raw_tables_param or [])
 
@@ -38,9 +38,8 @@ def create_dag(
         python pipelines/postgres_adls/generic.py
         """
 
-        # 2. Boucle : 1 Pod Kubernetes par entrée dans la liste TABLES
+        # 2. Construction des variables d'environnement du Pod
         for table_item in tables_list:
-            # Sécurité si l'élément est un dictionnaire ou une simple string
             if isinstance(table_item, dict):
                 table_source = table_item.get("source")
                 target_name = table_item.get("target_name", table_source)
@@ -63,29 +62,56 @@ def create_dag(
                 "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port or 5432 }}",
 
-                # Storage Azure / Azurite Destination
-                "USE_AZURITE": "{{ params.USE_AZURITE }}",
-                "AZURE_STORAGE_CONNECTION_STRING": (
-                    "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
-                    "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
-                ),
-                "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
-                "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
-                    "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login or '' }}"
-                ),
-                "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
-                    "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password or '' }}"
-                ),
-
-                # Paramètres applicatifs transmis à ton script Python DLT
+                # Variables applicatives DLT
                 "DLT_PIPELINE_ID": f"{{{{ params.ID_PIPELINE }}}}_{clean_table_id}",
                 "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
-                "DLT_SOURCE_TABLE": table_source,       # ex: "orders"
-                "DLT_TARGET_NAME": target_name,         # ex: "commandes_export"
+                "DLT_SOURCE_TABLE": table_source,
+                "DLT_TARGET_NAME": target_name,
                 "DLT_TARGET_PATH": "{{ params.CONTENEUR_AZURE }}",
                 "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
+                "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE | default('replace') }}",
+
+                # Destination Azure générique
+                "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
+
+            # 3. Injection conditionnelle des credentials d'infrastructure
+            use_azurite_str = str(params.get("USE_AZURITE", "true")).lower()
+            
+            if use_azurite_str == "true":
+                # Mode local Azurite (HTTP / Endpoint dédié pour fsspec)
+                az_conn = (
+                    "DefaultEndpointsProtocol=http;"
+                    "AccountName=devstoreaccount1;"
+                    "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+                    "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+                )
+                extra_kwargs = json.dumps({
+                    "endpoint_url": "http://azurite:10000/devstoreaccount1",
+                    "connection_string": az_conn,
+                })
+                table_env_vars.update({
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
+                        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+                    ),
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_EXTRA_KWARGS": extra_kwargs,
+                })
+            else:
+                # Mode Production ADLS Gen2 (Connexion Azure réelle)
+                table_env_vars.update({
+                    "AZURE_STORAGE_CONNECTION_STRING": (
+                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
+                        "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
+                    ),
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
+                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login or '' }}"
+                    ),
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
+                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password or '' }}"
+                    ),
+                })
 
             KubernetesPodOperator(
                 task_id=f"run_dlt_{clean_table_id}",
