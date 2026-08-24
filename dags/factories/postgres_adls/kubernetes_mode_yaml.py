@@ -86,6 +86,8 @@ def create_dag(
                 extra_kwargs = json.dumps({
                     "endpoint_url": "http://azurite:10000/devstoreaccount1",
                     "connection_string": az_conn,
+                    "use_azure_cli": False,
+                    "allow_http": True,  # <-- Requis pour Delta-RS en HTTP
                 })
                 table_env_vars.update({
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
@@ -93,6 +95,11 @@ def create_dag(
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_EXTRA_KWARGS": extra_kwargs,
+                    # Variables d'environnement explicites pour la librairie Rust 'deltalake'
+                    "AZURE_STORAGE_USE_HTTP": "true",
+                    "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
+                    "AZURE_STORAGE_ACCOUNT_KEY": "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
+                    "AZURE_ENDPOINT_URL": "http://azurite:10000/devstoreaccount1",
                 })
             else:
                 table_env_vars.update({

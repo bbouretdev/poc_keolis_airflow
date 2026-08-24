@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir \
     azure-keyvault-secrets
 
 RUN pip install --no-cache-dir \
-    "dlt[postgres,duckdb,azure,snowflake]" \
+    "dlt[postgres,duckdb,azure,snowflake,deltalake]" \
     connectorx \
     azure-identity \
     azure-keyvault-secrets
