@@ -25,7 +25,7 @@ def create_dag(
         tables_list = raw_tables_param.value if hasattr(raw_tables_param, "value") else raw_tables_param
 
         if not tables_list or not isinstance(tables_list, list):
-            raise ValueError("❌ Le paramètre 'TABLES' doit être une liste non vide d'objets dans le YAML.")
+            raise ValueError("❌ Le paramètre 'TABLES' doit être une liste non vide dans le YAML.")
 
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
         git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
@@ -45,9 +45,13 @@ def create_dag(
                 raise KeyError("❌ Chaque élément de 'TABLES' doit obligatoirement contenir 'source' et 'target_name'.")
 
             table_source = table_item["source"]
-            target_name = table_item["target_name"]  # Peut être "ventes/2026/commandes_export"
+            target_name = table_item["target_name"]
+            
+            # Récupération optionnelle de la surcharge par table ou de la valeur globale Airflow
+            table_strategy = table_item.get("write_strategy", "")
+            cursor_column = table_item.get("cursor_column", "")
+            primary_key = table_item.get("primary_key", "")
 
-            # Nettoyage pour les noms de tâches et Pods Kubernetes (car / et _ y sont interdits/déconseillés)
             clean_task_id = target_name.lower().replace("/", "-").replace("_", "-")
 
             table_env_vars = {
@@ -71,7 +75,11 @@ def create_dag(
                 "DLT_TARGET_PATH": "{{ params.CONTENEUR_AZURE }}",
                 "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
-                "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
+                
+                # Si la table n'a pas de stratégie propre, on utilise la valeur choisie dans le menu Airflow
+                "DLT_WRITE_STRATEGY": table_strategy if table_strategy else "{{ params.STRATEGIE_ECRITURE }}",
+                "DLT_CURSOR_COLUMN": cursor_column,
+                "DLT_PRIMARY_KEY": primary_key,
 
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
