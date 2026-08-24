@@ -48,7 +48,6 @@ def create_dag(
             target_name = table_item["target_name"]
             clean_task_id = target_name.lower().replace("/", "-").replace("_", "-")
 
-            # 🎯 DÉFINITION DU DICTIONNAIRE DANS LA BOUCLE
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
                 "RUNTIME__DLTHUB_TELEMETRY": "false",
@@ -72,8 +71,7 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination Delta
-                "DESTINATION__DELTA__CREDENTIALS": "az://{{ params.CONTENEUR_AZURE }}",
+                "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
 
             use_azurite_str = str(params.get("USE_AZURITE")).lower()
@@ -90,11 +88,11 @@ def create_dag(
                     "connection_string": az_conn,
                 })
                 table_env_vars.update({
-                    "DESTINATION__DELTA__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
-                    "DESTINATION__DELTA__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
-                    "DESTINATION__DELTA__CREDENTIALS__AZURE_STORAGE_EXTRA_KWARGS": extra_kwargs,
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_EXTRA_KWARGS": extra_kwargs,
                 })
             else:
                 table_env_vars.update({
@@ -102,10 +100,10 @@ def create_dag(
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
                         "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
                     ),
-                    "DESTINATION__DELTA__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login }}"
                     ),
-                    "DESTINATION__DELTA__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
                     ),
                 })
