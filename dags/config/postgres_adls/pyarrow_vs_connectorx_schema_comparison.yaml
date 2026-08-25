@@ -16,6 +16,7 @@ params:
   TABLES:
     - source: "test_precision_moteurs"
       target_name: "pyarrow/test_precision_moteurs"
+      partition_col: null
   
   CONTENEUR_AZURE: "target-data"
   MOTEUR_DLT: "pyarrow"
