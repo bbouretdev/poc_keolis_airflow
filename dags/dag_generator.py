@@ -34,7 +34,7 @@ def build_pg2adls_params(raw_params: dict) -> dict:
         "AZURE_CONN_ID": Param(raw_params["AZURE_CONN_ID"], type="string"),
         "SCHEMA_SOURCE": Param(raw_params["SCHEMA_SOURCE"], type="string"),
         "DATASET_NAME": Param(raw_params["DATASET_NAME"], type="string"),
-        "TABLES": Param(raw_params["TABLES"], type="array", description="Liste des objets {source, target_name}"),
+        "TABLES": Param(raw_params["TABLES"], type="array", description="Liste des objets {source, target_name, partition_col}"),
         "CONTENEUR_AZURE": Param(raw_params["CONTENEUR_AZURE"], type="string"),
         "MOTEUR_DLT": Param(raw_params["MOTEUR_DLT"], type="string"),
         "STRATEGIE_ECRITURE": Param(raw_params["STRATEGIE_ECRITURE"], type="string"),
