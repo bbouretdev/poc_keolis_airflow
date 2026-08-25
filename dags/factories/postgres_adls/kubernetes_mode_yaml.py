@@ -47,15 +47,14 @@ def create_dag(
             table_source = table_item["source"]
             target_name = table_item["target_name"]
             
-            # Récupération sécurisée de partition_col (évite NameError et gère le null/None)
             raw_partition = table_item.get("partition_col")
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
             clean_task_id = target_name.lower().replace("/", "-").replace("_", "-")
 
-            # Construction dynamique du LAYOUT DLT en fonction de la présence d'un partitionnement
+            # Utilisation des placeholders natifs DLT : {YYYY}, {MM}, {DD}
             layout_pattern = (
-                "{table_name}/Year={Year}/Month={Month}/Day={Day}/{file_id}.{ext}"
+                "{table_name}/Year={YYYY}/Month={MM}/Day={DD}/{file_id}.{ext}"
                 if partition_col
                 else "{table_name}/{file_id}.{ext}"
             )
@@ -84,7 +83,7 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination DLT Native (URL du conteneur et gabarit d'arborescence)
+                # Configuration Destination DLT Native
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
                 "DESTINATION__FILESYSTEM__LAYOUT": layout_pattern,
             }
