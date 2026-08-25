@@ -52,9 +52,9 @@ def create_dag(
 
             clean_task_id = target_name.lower().replace("/", "-").replace("_", "-")
 
-            # Utilisation des placeholders natifs DLT : {YYYY}, {MM}, {DD}
+            # Layout basé sur la DATE MÉTIER ({Year}, {Month}, {Day})
             layout_pattern = (
-                "{table_name}/Year={YYYY}/Month={MM}/Day={DD}/{file_id}.{ext}"
+                "{table_name}/Year={Year}/Month={Month}/Day={Day}/{file_id}.{ext}"
                 if partition_col
                 else "{table_name}/{file_id}.{ext}"
             )
@@ -83,9 +83,10 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Configuration Destination DLT Native
+                # Destination DLT Native avec déclaration des placeholders de données
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
                 "DESTINATION__FILESYSTEM__LAYOUT": layout_pattern,
+                "DESTINATION__FILESYSTEM__EXTRA_PLACEHOLDERS": '{"Year": "Year", "Month": "Month", "Day": "Day"}',
             }
 
             use_azurite_str = str(params.get("USE_AZURITE")).lower()
