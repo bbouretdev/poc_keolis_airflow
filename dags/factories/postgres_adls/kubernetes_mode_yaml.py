@@ -46,6 +46,11 @@ def create_dag(
 
             table_source = table_item["source"]
             target_name = table_item["target_name"]
+            
+            # --- Correction NameError : Récupération sécurisée de partition_col ---
+            raw_partition = table_item.get("partition_col")
+            partition_col = str(raw_partition) if raw_partition is not None else ""
+
             clean_task_id = target_name.lower().replace("/", "-").replace("_", "-")
 
             table_env_vars = {
