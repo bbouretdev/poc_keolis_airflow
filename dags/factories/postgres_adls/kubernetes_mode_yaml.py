@@ -67,6 +67,7 @@ def create_dag(
                 "DLT_DATASET_NAME": "{{ params.DATASET_NAME }}",
                 "DLT_SOURCE_TABLE": table_source,
                 "DLT_TARGET_NAME": target_name,
+                "DLT_PARTITION_COL": partition_col,
                 "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",

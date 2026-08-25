@@ -16,6 +16,7 @@ params:
   TABLES:
     - source: "orders"
       target_name: "ventes/commandes_export"
+      partition_col: "expedition_date"
     - source: "items"
       target_name: "referentiel/articles_export"
   

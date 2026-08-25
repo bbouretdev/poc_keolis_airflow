@@ -867,3 +867,69 @@ Handling connection for 8080
 Handling connection for 8080
 E0824 16:45:05.496938   28090 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:34044: write tcp4 127.0.0.1:8080->127.0.0.1:34044: write: broken pipe"
 Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+E0824 16:48:34.640394   28090 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:52636: write tcp4 127.0.0.1:8080->127.0.0.1:52636: write: broken pipe"
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+Forwarding from 127.0.0.1:5433 -> 5432
+Forwarding from [::1]:5433 -> 5432
+Forwarding from 127.0.0.1:9001 -> 9001
+Forwarding from [::1]:9001 -> 9001
+Forwarding from 127.0.0.1:5434 -> 5432
+Forwarding from [::1]:5434 -> 5432
+Forwarding from 127.0.0.1:10000 -> 10000
+Forwarding from [::1]:10000 -> 10000
+Handling connection for 8080
+E0825 08:28:11.303684    7886 portforward.go:522] "Unhandled Error" err="an error occurred forwarding 8080 -> 8080: error forwarding port 8080 to pod cd1663690cedcc02d6b753f006973f324e4d4e8b439d6e7b43d5a7179f94f2ec, uid : failed to execute portforward in network namespace \"/var/run/netns/cni-a99295cd-4a94-0d85-7549-d60e4c0bb38f\": failed to connect to localhost:8080 inside namespace \"cd1663690cedcc02d6b753f006973f324e4d4e8b439d6e7b43d5a7179f94f2ec\", IPv4: dial tcp4 127.0.0.1:8080: connect: connection refused IPv6 dial tcp6: address localhost: no suitable address found "
+error: lost connection to pod
+Forwarding from 127.0.0.1:8080 -> 8080
+Forwarding from [::1]:8080 -> 8080
+Unable to listen on port 10000: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:10000: bind: address already in use unable to create listener: Error listen tcp6 [::1]:10000: bind: address already in use]
+error: unable to listen on any of the requested ports: [{10000 10000}]
+Unable to listen on port 5434: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:5434: bind: address already in use unable to create listener: Error listen tcp6 [::1]:5434: bind: address already in use]
+Unable to listen on port 9001: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:9001: bind: address already in use unable to create listener: Error listen tcp6 [::1]:9001: bind: address already in use]
+Unable to listen on port 5433: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:5433: bind: address already in use unable to create listener: Error listen tcp6 [::1]:5433: bind: address already in use]
+error: unable to listen on any of the requested ports: [{5434 5432}]
+error: unable to listen on any of the requested ports: [{9001 9001}]
+error: unable to listen on any of the requested ports: [{5433 5432}]
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 5433
+Handling connection for 5433
+Handling connection for 5433
