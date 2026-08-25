@@ -47,7 +47,7 @@ def create_dag(
             table_source = table_item["source"]
             target_name = table_item["target_name"]
             
-            # --- Correction NameError : Récupération sécurisée de partition_col ---
+            # Récupération sécurisée de partition_col (évite NameError et gère null)
             raw_partition = table_item.get("partition_col")
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
@@ -76,22 +76,37 @@ def create_dag(
                 "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
-                "DLT_BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
-                "DLT_USE_AZURITE": "{{ params.USE_AZURITE }}",
+
+                # Destination DLT (Nommage strict attendu par dlt pour resoudre bucket_url)
+                "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
 
             use_azurite_str = str(params.get("USE_AZURITE")).lower()
             
-            if use_azurite_str != "true":
+            if use_azurite_str == "true":
+                az_conn = (
+                    "DefaultEndpointsProtocol=http;"
+                    "AccountName=devstoreaccount1;"
+                    "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+                    "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+                )
+                table_env_vars.update({
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
+                        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+                    ),
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
+                })
+            else:
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
                         "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
                     ),
-                    "AZURE_STORAGE_ACCOUNT_NAME": (
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login }}"
                     ),
-                    "AZURE_STORAGE_ACCOUNT_KEY": (
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
                     ),
                 })
