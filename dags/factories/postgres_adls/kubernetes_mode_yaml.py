@@ -100,14 +100,13 @@ def create_dag(
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
 
-                    # Surcharge explicite d'hôte pour la couche Rust object_store
+                    # Variables bas niveau lues par object_store/deltalake
                     "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
-                    "AZURE_STORAGE_USE_EMULATOR": "true",
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
-                    "AZURE_ENDPOINT_URL": "http://azurite:10000/devstoreaccount1",
+                    "AZURE_BLOB_ENDPOINT": "http://azurite:10000/devstoreaccount1",
                 })
             else:
                 table_env_vars.update({
