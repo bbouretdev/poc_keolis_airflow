@@ -10,7 +10,6 @@ def create_dag(
     params: dict,
     schedule=None,
 ):
-
     with DAG(
         dag_id=dag_id,
         description=description,
@@ -32,7 +31,7 @@ def create_dag(
         use_azurite_bool = str(azurite_val).strip().lower() in ("true", "1", "yes")
 
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
-        git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
+        git_branch = "{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}"
 
         bash_cmd = f"""
         set -e
@@ -56,9 +55,7 @@ def create_dag(
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
-            # Bucket URL standard sans préfixer devstoreaccount1 dans le schéma
-            bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
-
+            # Variables d'environnement communes
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
                 "RUNTIME__DLTHUB_TELEMETRY": "false",
@@ -84,7 +81,8 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                "DESTINATION__FILESYSTEM__BUCKET_URL": bucket_url,
+                # Bucket URL unifié
+                "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
             
             if use_azurite_bool:
@@ -96,17 +94,11 @@ def create_dag(
                 )
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": az_conn,
-                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
-                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
-                        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
-                    ),
-                    "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
-
                     "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
-                    # Variables HTTP pour adlfs et le driver Rust deltalake (object_store)
+                    # Clés requises par adlfs & object_store (Rust / deltalake)
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
                     "AZURE_STORAGE_USE_HTTP": "true",
                 })
@@ -116,10 +108,10 @@ def create_dag(
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
                         "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
                     ),
-                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
+                    "AZURE_STORAGE_ACCOUNT_NAME": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login }}"
                     ),
-                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
+                    "AZURE_STORAGE_ACCOUNT_KEY": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
                     ),
                 })
