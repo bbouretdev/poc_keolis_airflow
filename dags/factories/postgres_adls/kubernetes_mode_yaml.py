@@ -82,7 +82,8 @@ def create_dag(
                 "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
-                "DLT_STORAGE_FORMAT": "{{ params.FORMAT_STOCKAGE }}",  # <--- Nouvelle variable transmise à dlt
+                "DLT_STORAGE_FORMAT": "{{ params.FORMAT_STOCKAGE }}",
+                "DLT_USE_PARTITION": "{{ params.USE_PARTITION }}",
 
                 "DESTINATION__FILESYSTEM__BUCKET_URL": bucket_url,
             }
