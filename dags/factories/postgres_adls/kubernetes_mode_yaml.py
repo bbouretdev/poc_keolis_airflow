@@ -27,6 +27,11 @@ def create_dag(
         if not tables_list or not isinstance(tables_list, list):
             raise ValueError("❌ Le paramètre 'TABLES' doit être une liste non vide dans le YAML.")
 
+        # Extraction propre du paramètre USE_AZURITE
+        raw_azurite = params.get("USE_AZURITE")
+        azurite_val = raw_azurite.value if hasattr(raw_azurite, "value") else raw_azurite
+        use_azurite_bool = str(azurite_val).strip().lower() in ("true", "1", "yes")
+
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
         git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
 
@@ -51,13 +56,12 @@ def create_dag(
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
-            use_azurite_str = str(params.get("USE_AZURITE")).lower()
 
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
                 "RUNTIME__DLTHUB_TELEMETRY": "false",
                 "RUNTIME__WORKERS": "4",
-                "USE_AZURITE": use_azurite_str,
+                "USE_AZURITE": "true" if use_azurite_bool else "false",
 
                 # Source Postgres
                 "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
@@ -82,7 +86,7 @@ def create_dag(
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
             
-            if use_azurite_str == "true":
+            if use_azurite_bool:
                 az_conn = (
                     "DefaultEndpointsProtocol=http;"
                     "AccountName=devstoreaccount1;"
@@ -90,14 +94,14 @@ def create_dag(
                     "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
                 )
                 table_env_vars.update({
-                    # Couche DLT / Python
+                    # Credentials DLT Python
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
 
-                    # Couche Rust delta-rs / object_store (Directement lues au niveau OS)
+                    # Variables bas niveau lues DIRECTEMENT par la lib Rust object_store/deltalake
                     "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
