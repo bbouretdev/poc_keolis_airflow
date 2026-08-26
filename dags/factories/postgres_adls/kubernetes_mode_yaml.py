@@ -55,7 +55,6 @@ def create_dag(
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
-            # Variables d'environnement communes
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
                 "RUNTIME__DLTHUB_TELEMETRY": "false",
@@ -81,7 +80,6 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Bucket URL unifié
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
             
@@ -92,15 +90,17 @@ def create_dag(
                     "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
                     "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
                 )
+                az_key = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": az_conn,
                     "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
-                    "AZURE_STORAGE_ACCOUNT_KEY": (
-                        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
-                    ),
-                    # Clés requises par adlfs & object_store (Rust / deltalake)
+                    "AZURE_STORAGE_ACCOUNT_KEY": az_key,
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
                     "AZURE_STORAGE_USE_HTTP": "true",
+
+                    # Variables requises par le validateur de configuration DLT
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": az_key,
                 })
             else:
                 table_env_vars.update({
@@ -112,6 +112,12 @@ def create_dag(
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login }}"
                     ),
                     "AZURE_STORAGE_ACCOUNT_KEY": (
+                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
+                    ),
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
+                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login }}"
+                    ),
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
                     ),
                 })
