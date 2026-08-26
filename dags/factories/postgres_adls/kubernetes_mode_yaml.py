@@ -50,7 +50,7 @@ def create_dag(
             raw_partition = table_item.get("partition_col")
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
-            # Utilisation du snake_case strict pour l'id pipeline
+            # Standardisation en snake_case
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
             table_env_vars = {
@@ -96,6 +96,11 @@ def create_dag(
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
+                    # Autorise Delta-RS à parler à Azurite en HTTP local
+                    "DESTINATION__FILESYSTEM__DELTALAKE_STORAGE_OPTIONS": json.dumps({
+                        "use_emulator": "true",
+                        "azure_storage_allow_http": "true",
+                    }),
                 })
             else:
                 table_env_vars.update({
@@ -109,6 +114,10 @@ def create_dag(
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
                     ),
+                    "DESTINATION__FILESYSTEM__DELTALAKE_STORAGE_OPTIONS": json.dumps({
+                        "timeout": "60s",
+                        "max_retries": "3",
+                    }),
                 })
 
             KubernetesPodOperator(
