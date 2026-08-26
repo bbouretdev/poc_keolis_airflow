@@ -3,7 +3,7 @@ from datetime import datetime
 import socket
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from k8s.v1 import HostAlias
+from kubernetes.client import models as k8s
 
 
 def resolve_service_ip(service_name: str) -> str:
@@ -11,7 +11,6 @@ def resolve_service_ip(service_name: str) -> str:
     try:
         return socket.gethostbyname(service_name)
     except Exception:
-        # Fallback si la résolution échoue au moment du parsing de la DAG
         return "127.0.0.1"
 
 
@@ -55,7 +54,7 @@ def create_dag(
         python pipelines/postgres_adls/generic.py
         """
 
-        # Résolution de l'IP du service Azurite pour l'Option A
+        # Résolution de l'IP du service Azurite
         azurite_ip = resolve_service_ip("azurite")
 
         for table_item in tables_list:
@@ -120,10 +119,10 @@ def create_dag(
                     "AZURE_STORAGE_USE_EMULATOR": "false",
                 })
 
-                # Alias de redirect K8s : redirige 127.0.0.1 ET le domaine Azure vers l'IP réelle du Service Azurite
+                # Redirection DNS officielle via kubernetes.client.models
                 if azurite_ip != "127.0.0.1":
                     host_aliases_list = [
-                        HostAlias(
+                        k8s.V1HostAlias(
                             ip=azurite_ip,
                             hostnames=[
                                 "devstoreaccount1.blob.core.windows.net",
