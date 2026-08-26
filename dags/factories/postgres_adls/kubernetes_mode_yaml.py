@@ -27,7 +27,6 @@ def create_dag(
         if not tables_list or not isinstance(tables_list, list):
             raise ValueError("❌ Le paramètre 'TABLES' doit être une liste non vide dans le YAML.")
 
-        # Extraction propre du paramètre USE_AZURITE (Airflow v3 Param)
         raw_azurite = params.get("USE_AZURITE")
         azurite_val = raw_azurite.value if hasattr(raw_azurite, "value") else raw_azurite
         use_azurite_bool = str(azurite_val).strip().lower() in ("true", "1", "yes")
@@ -82,7 +81,7 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination DLT Bucket URL simple et propre
+                # Destination DLT Bucket URL
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
             
@@ -94,24 +93,21 @@ def create_dag(
                     "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
                 )
                 table_env_vars.update({
-                    # Connection String globale Azure
                     "AZURE_STORAGE_CONNECTION_STRING": az_conn,
-
-                    # Credentials DLT Python
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
 
-                    # Variables bas niveau lues par object_store/deltalake
+                    # Surcharge explicite d'hôte pour la couche Rust object_store
                     "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "AZURE_STORAGE_USE_EMULATOR": "true",
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
-                    "AZURE_BLOB_ENDPOINT": "http://azurite:10000/devstoreaccount1",
+                    "AZURE_ENDPOINT_URL": "http://azurite:10000/devstoreaccount1",
                 })
             else:
                 table_env_vars.update({
