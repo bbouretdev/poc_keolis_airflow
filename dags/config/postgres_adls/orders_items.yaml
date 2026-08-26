@@ -17,9 +17,9 @@ params:
     - source: "orders"
       target_name: "ventes/commandes_export"
       partition_col: "expedition_date"
-    - source: "items"
-      target_name: "referentiel/articles_export"
-      partition_col: null
+    # - source: "items"
+    #   target_name: "referentiel/articles_export"
+    #   partition_col: null
   
   CONTENEUR_AZURE: "target-data"
   MOTEUR_DLT: "pyarrow"

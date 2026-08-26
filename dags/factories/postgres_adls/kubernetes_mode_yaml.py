@@ -76,7 +76,7 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination DLT Native URL
+                # Destination DLT Bucket URL
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
 
