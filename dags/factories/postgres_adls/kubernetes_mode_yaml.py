@@ -58,7 +58,7 @@ def create_dag(
 
             # URL explicite selon le mode
             if use_azurite_bool:
-                bucket_url = "az://devstoreaccount1/{{ params.CONTENEUR_AZURE }}"
+                bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
             else:
                 bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
 
