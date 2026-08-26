@@ -51,11 +51,13 @@ def create_dag(
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
+            use_azurite_str = str(params.get("USE_AZURITE")).lower()
 
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
                 "RUNTIME__DLTHUB_TELEMETRY": "false",
                 "RUNTIME__WORKERS": "4",
+                "USE_AZURITE": use_azurite_str,
 
                 # Source Postgres
                 "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
@@ -79,8 +81,6 @@ def create_dag(
                 # Destination DLT Bucket URL
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
-
-            use_azurite_str = str(params.get("USE_AZURITE")).lower()
             
             if use_azurite_str == "true":
                 az_conn = (
@@ -90,15 +90,21 @@ def create_dag(
                     "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
                 )
                 table_env_vars.update({
+                    # Couche DLT / Python
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
-                    
-                    # Variables plates natives DLT pour forcer le HTTP/Azurite dans Delta-RS
-                    "DESTINATION__FILESYSTEM__DELTALAKE_STORAGE_OPTIONS__USE_EMULATOR": "true",
-                    "DESTINATION__FILESYSTEM__DELTALAKE_STORAGE_OPTIONS__AZURE_STORAGE_ALLOW_HTTP": "true",
+
+                    # Couche Rust delta-rs / object_store (Directement lues au niveau OS)
+                    "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
+                    "AZURE_STORAGE_ACCOUNT_KEY": (
+                        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+                    ),
+                    "AZURE_STORAGE_USE_EMULATOR": "true",
+                    "AZURE_STORAGE_ALLOW_HTTP": "true",
+                    "AZURE_BLOB_ENDPOINT": "http://azurite:10000/devstoreaccount1",
                 })
             else:
                 table_env_vars.update({
@@ -112,8 +118,6 @@ def create_dag(
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
                     ),
-                    "DESTINATION__FILESYSTEM__DELTALAKE_STORAGE_OPTIONS__TIMEOUT": "60s",
-                    "DESTINATION__FILESYSTEM__DELTALAKE_STORAGE_OPTIONS__MAX_RETRIES": "3",
                 })
 
             KubernetesPodOperator(
