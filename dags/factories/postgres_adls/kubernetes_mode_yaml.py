@@ -1,17 +1,7 @@
 import json
 from datetime import datetime
-import socket
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
-from kubernetes.client import models as k8s
-
-
-def resolve_service_ip(service_name: str) -> str:
-    """Résout le nom du service K8s en IP interne au cluster."""
-    try:
-        return socket.gethostbyname(service_name)
-    except Exception:
-        return "127.0.0.1"
 
 
 def create_dag(
@@ -54,9 +44,6 @@ def create_dag(
         python pipelines/postgres_adls/generic.py
         """
 
-        # Résolution de l'IP du service Azurite
-        azurite_ip = resolve_service_ip("azurite")
-
         for table_item in tables_list:
             if not isinstance(table_item, dict) or "source" not in table_item or "target_name" not in table_item:
                 raise KeyError("❌ Chaque élément de 'TABLES' doit obligatoirement contenir 'source' et 'target_name'.")
@@ -75,6 +62,7 @@ def create_dag(
                 "RUNTIME__WORKERS": "4",
                 "USE_AZURITE": "true" if use_azurite_bool else "false",
 
+                # Source Postgres
                 "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": "{{ conn.get(params.POSTGRESQL_SOURCE).schema }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": "{{ conn.get(params.POSTGRESQL_SOURCE).login }}",
@@ -82,6 +70,7 @@ def create_dag(
                 "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port }}",
 
+                # Variables applicatives DLT
                 "DLT_PIPELINE_ID": f"pg2adls_{clean_task_id}",
                 "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
                 "DLT_DATASET_NAME": "{{ params.DATASET_NAME }}",
@@ -92,10 +81,10 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
+                # Bucket URL DLT
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
             
-            host_aliases_list = []
             if use_azurite_bool:
                 az_conn = (
                     "DefaultEndpointsProtocol=http;"
@@ -116,21 +105,9 @@ def create_dag(
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
-                    "AZURE_STORAGE_USE_EMULATOR": "false",
+                    "AZURE_STORAGE_USE_EMULATOR": "true",
+                    "AZURE_STORAGE_EMULATOR_HOST": "http://azurite:10000",
                 })
-
-                # Redirection DNS officielle via kubernetes.client.models
-                if azurite_ip != "127.0.0.1":
-                    host_aliases_list = [
-                        k8s.V1HostAlias(
-                            ip=azurite_ip,
-                            hostnames=[
-                                "devstoreaccount1.blob.core.windows.net",
-                                "localhost",
-                            ],
-                        )
-                    ]
-
             else:
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": (
@@ -152,7 +129,6 @@ def create_dag(
                 image="dlt-ingestion-engine:dev",
                 image_pull_policy="Never",
                 env_vars=table_env_vars,
-                host_aliases=host_aliases_list if host_aliases_list else None,
                 cmds=["/bin/bash", "-c"],
                 arguments=[bash_cmd],
                 get_logs=True,
