@@ -34,8 +34,21 @@ def create_dag(
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
         git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
 
+        # Script Bash avec redirection réseau dynamique
         bash_cmd = f"""
         set -e
+
+        if [ "$USE_AZURITE" = "true" ]; then
+            echo "🌐 Resolution dynamique de l'IP du service Azurite..."
+            AZURITE_IP=$(getent hosts azurite | awk '{{ print $1 }}')
+            if [ -n "$AZURITE_IP" ]; then
+                echo "$AZURITE_IP devstoreaccount1.blob.core.windows.net" >> /etc/hosts || true
+                echo "✅ Match DNS ajoute dans /etc/hosts : $AZURITE_IP -> devstoreaccount1.blob.core.windows.net"
+            else
+                echo "⚠️ Impossible de resoudre le service 'azurite'"
+            fi
+        fi
+
         echo "=== Cloning repository ==="
         git clone -b {git_branch} {git_host} /tmp/repo
         cd /tmp/repo
@@ -86,11 +99,12 @@ def create_dag(
             }
             
             if use_azurite_bool:
+                # Connexion locale Azurite via le port 10000 sur le domaine redirected
                 az_conn = (
                     "DefaultEndpointsProtocol=http;"
                     "AccountName=devstoreaccount1;"
                     "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
-                    "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
+                    "BlobEndpoint=http://devstoreaccount1.blob.core.windows.net:10000/devstoreaccount1;"
                 )
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": az_conn,
@@ -105,8 +119,7 @@ def create_dag(
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
-                    "AZURE_STORAGE_USE_EMULATOR": "true",
-                    "AZURE_STORAGE_EMULATOR_HOST": "http://azurite:10000",
+                    "AZURE_STORAGE_USE_EMULATOR": "false",
                 })
             else:
                 table_env_vars.update({
