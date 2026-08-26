@@ -34,21 +34,8 @@ def create_dag(
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
         git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
 
-        # Script Bash avec redirection réseau dynamique
         bash_cmd = f"""
         set -e
-
-        if [ "$USE_AZURITE" = "true" ]; then
-            echo "🌐 Resolution dynamique de l'IP du service Azurite..."
-            AZURITE_IP=$(getent hosts azurite | awk '{{ print $1 }}')
-            if [ -n "$AZURITE_IP" ]; then
-                echo "$AZURITE_IP devstoreaccount1.blob.core.windows.net" >> /etc/hosts || true
-                echo "✅ Match DNS ajoute dans /etc/hosts : $AZURITE_IP -> devstoreaccount1.blob.core.windows.net"
-            else
-                echo "⚠️ Impossible de resoudre le service 'azurite'"
-            fi
-        fi
-
         echo "=== Cloning repository ==="
         git clone -b {git_branch} {git_host} /tmp/repo
         cd /tmp/repo
@@ -69,6 +56,12 @@ def create_dag(
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
+            # URL explicite selon le mode
+            if use_azurite_bool:
+                bucket_url = "az://devstoreaccount1/{{ params.CONTENEUR_AZURE }}"
+            else:
+                bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
+
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
                 "RUNTIME__DLTHUB_TELEMETRY": "false",
@@ -83,7 +76,7 @@ def create_dag(
                 "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port }}",
 
-                # Variables applicatives DLT
+                # Variables DLT
                 "DLT_PIPELINE_ID": f"pg2adls_{clean_task_id}",
                 "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
                 "DLT_DATASET_NAME": "{{ params.DATASET_NAME }}",
@@ -94,17 +87,15 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Bucket URL DLT
-                "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
+                "DESTINATION__FILESYSTEM__BUCKET_URL": bucket_url,
             }
             
             if use_azurite_bool:
-                # Connexion locale Azurite via le port 10000 sur le domaine redirected
                 az_conn = (
                     "DefaultEndpointsProtocol=http;"
                     "AccountName=devstoreaccount1;"
                     "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
-                    "BlobEndpoint=http://devstoreaccount1.blob.core.windows.net:10000/devstoreaccount1;"
+                    "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
                 )
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": az_conn,
@@ -119,7 +110,6 @@ def create_dag(
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
-                    "AZURE_STORAGE_USE_EMULATOR": "false",
                 })
             else:
                 table_env_vars.update({
