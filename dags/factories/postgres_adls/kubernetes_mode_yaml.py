@@ -27,7 +27,7 @@ def create_dag(
         if not tables_list or not isinstance(tables_list, list):
             raise ValueError("❌ Le paramètre 'TABLES' doit être une liste non vide dans le YAML.")
 
-        # Extraction propre du paramètre USE_AZURITE
+        # Extraction du paramètre USE_AZURITE
         raw_azurite = params.get("USE_AZURITE")
         azurite_val = raw_azurite.value if hasattr(raw_azurite, "value") else raw_azurite
         use_azurite_bool = str(azurite_val).strip().lower() in ("true", "1", "yes")
@@ -94,6 +94,9 @@ def create_dag(
                     "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
                 )
                 table_env_vars.update({
+                    # Connection String globale Azure (lue par le SDK Python azure-storage-blob)
+                    "AZURE_STORAGE_CONNECTION_STRING": az_conn,
+
                     # Credentials DLT Python
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
@@ -101,7 +104,7 @@ def create_dag(
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
 
-                    # Variables bas niveau lues DIRECTEMENT par la lib Rust object_store/deltalake
+                    # Variables bas niveau lues par la lib Rust object_store/deltalake
                     "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
