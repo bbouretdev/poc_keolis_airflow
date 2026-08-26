@@ -56,11 +56,8 @@ def create_dag(
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
-            # URL sans devstoreaccount1 dans le schéma
-            if use_azurite_bool:
-                bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
-            else:
-                bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
+            # Bucket URL standard sans préfixer devstoreaccount1 dans le schéma
+            bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
 
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
@@ -109,7 +106,9 @@ def create_dag(
                     "AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
+                    # Variables HTTP pour adlfs et le driver Rust deltalake (object_store)
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
+                    "AZURE_STORAGE_USE_HTTP": "true",
                 })
             else:
                 table_env_vars.update({
