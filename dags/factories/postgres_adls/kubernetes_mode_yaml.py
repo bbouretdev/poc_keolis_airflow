@@ -52,13 +52,6 @@ def create_dag(
 
             clean_task_id = target_name.lower().replace("/", "-").replace("_", "-")
 
-            # Layout utilisant les champs de données PyArrow {year}, {month}, {day}
-            layout_pattern = (
-                "{table_name}/Year={year}/Month={month}/Day={day}/{file_id}.{ext}"
-                if partition_col
-                else "{table_name}/{file_id}.{ext}"
-            )
-
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
                 "RUNTIME__DLTHUB_TELEMETRY": "false",
@@ -83,9 +76,8 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination DLT Native
+                # Destination DLT Native URL
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
-                "DESTINATION__FILESYSTEM__LAYOUT": layout_pattern,
             }
 
             use_azurite_str = str(params.get("USE_AZURITE")).lower()

@@ -1042,3 +1042,17 @@ E0825 17:07:33.769362   41147 portforward.go:489] "Unhandled Error" err="error c
 Handling connection for 10000
 Handling connection for 10000
 Handling connection for 10000
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+Handling connection for 8080
+E0825 17:10:34.288436   41147 portforward.go:489] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:8080->127.0.0.1:43358: write tcp4 127.0.0.1:8080->127.0.0.1:43358: write: broken pipe"
+Handling connection for 10000
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
+error: lost connection to pod
