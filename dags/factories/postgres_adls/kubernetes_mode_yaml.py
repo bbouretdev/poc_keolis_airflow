@@ -34,8 +34,19 @@ def create_dag(
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
         git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
 
+        # Commande Bash avec tunnel TCP local socat (Option B)
         bash_cmd = f"""
         set -e
+
+        if [ "$USE_AZURITE" = "true" ]; then
+            echo "🔌 Configuration du tunnel local socat (127.0.0.1:10000 -> azurite:10000)..."
+            if ! command -v socat &> /dev/null; then
+                apt-get update && apt-get install -y socat || true
+            fi
+            socat TCP-LISTEN:10000,fork,reuseaddr TCP:azurite:10000 &
+            sleep 1
+        fi
+
         echo "=== Cloning repository ==="
         git clone -b {git_branch} {git_host} /tmp/repo
         cd /tmp/repo
@@ -81,7 +92,7 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination DLT Bucket URL standard
+                # Bucket URL DLT
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
             
@@ -100,15 +111,11 @@ def create_dag(
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
 
-                    # Surcharges réseau
                     "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
-                    "AZURE_STORAGE_USE_EMULATOR": "true",
-                    "AZURE_ENDPOINT_URL": "http://azurite:10000",
-                    "AZURE_BLOB_ENDPOINT": "http://azurite:10000",
                 })
             else:
                 table_env_vars.update({
