@@ -56,7 +56,7 @@ def create_dag(
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
-            # Correction de l'URL pour Azurite
+            # URL sans devstoreaccount1 dans le schéma
             if use_azurite_bool:
                 bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
             else:
