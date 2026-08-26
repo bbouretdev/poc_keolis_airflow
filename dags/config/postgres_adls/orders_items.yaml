@@ -1,5 +1,5 @@
 dag_id: "postgres_to_adls__orders_items"
-description: "Exportation des tables orders et items vers Parquet dans ADLS"
+description: "Exportation des tables orders vers ADLS/Azurite"
 schedule: null
 
 params:
@@ -17,11 +17,9 @@ params:
     - source: "orders"
       target_name: "ventes/commandes_export"
       partition_col: "expedition_date"
-    # - source: "items"
-    #   target_name: "referentiel/articles_export"
-    #   partition_col: null
   
   CONTENEUR_AZURE: "target-data"
   MOTEUR_DLT: "pyarrow"
   STRATEGIE_ECRITURE: "replace"
   TAILLE_LOT: 100000
+  FORMAT_STOCKAGE: "parquet"  # <--- Remplacer par "delta" ou "parquet" selon le besoin
