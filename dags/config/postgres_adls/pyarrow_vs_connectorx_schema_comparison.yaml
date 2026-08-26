@@ -22,3 +22,4 @@ params:
   MOTEUR_DLT: "pyarrow"
   STRATEGIE_ECRITURE: "replace"
   TAILLE_LOT: 100000
+  FORMAT_STOCKAGE: "parquet"
