@@ -50,7 +50,7 @@ def create_dag(
             raw_partition = table_item.get("partition_col")
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
-            # Standardisation de l'id de tâche
+            # Utilisation du snake_case strict pour l'id pipeline
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
             table_env_vars = {
@@ -66,7 +66,7 @@ def create_dag(
                 "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port }}",
 
-                # Variables applicatives DLT (Identifiant nettoyé en snake_case)
+                # Variables applicatives DLT
                 "DLT_PIPELINE_ID": f"pg2adls_{clean_task_id}",
                 "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
                 "DLT_DATASET_NAME": "{{ params.DATASET_NAME }}",
@@ -77,9 +77,8 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Configuration Destination DLT Native
+                # Destination DLT Bucket URL
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
-                "DESTINATION__FILESYSTEM__LAYOUT": "{table_name}/Year={year}/Month={month}/Day={day}/{file_id}.{ext}" if partition_col else "{table_name}/{file_id}.{ext}",
             }
 
             use_azurite_str = str(params.get("USE_AZURITE")).lower()
