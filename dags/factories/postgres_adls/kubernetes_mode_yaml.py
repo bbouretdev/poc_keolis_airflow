@@ -10,6 +10,7 @@ def create_dag(
     params: dict,
     schedule=None,
 ):
+
     with DAG(
         dag_id=dag_id,
         description=description,
@@ -31,7 +32,7 @@ def create_dag(
         use_azurite_bool = str(azurite_val).strip().lower() in ("true", "1", "yes")
 
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
-        git_branch = "{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}"
+        git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
 
         bash_cmd = f"""
         set -e
@@ -54,6 +55,12 @@ def create_dag(
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
+
+            # Correction de l'URL pour Azurite
+            if use_azurite_bool:
+                bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
+            else:
+                bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
 
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
@@ -80,7 +87,7 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
+                "DESTINATION__FILESYSTEM__BUCKET_URL": bucket_url,
             }
             
             if use_azurite_bool:
@@ -90,29 +97,25 @@ def create_dag(
                     "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
                     "BlobEndpoint=http://azurite:10000/devstoreaccount1;"
                 )
-                az_key = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": az_conn,
-                    "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
-                    "AZURE_STORAGE_ACCOUNT_KEY": az_key,
-                    "AZURE_STORAGE_ALLOW_HTTP": "true",
-                    "AZURE_STORAGE_USE_HTTP": "true",
-
-                    # Variables requises par le validateur de configuration DLT
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
-                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": az_key,
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
+                        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+                    ),
+                    "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
+
+                    "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
+                    "AZURE_STORAGE_ACCOUNT_KEY": (
+                        "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+                    ),
+                    "AZURE_STORAGE_ALLOW_HTTP": "true",
                 })
             else:
                 table_env_vars.update({
                     "AZURE_STORAGE_CONNECTION_STRING": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
                         "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
-                    ),
-                    "AZURE_STORAGE_ACCOUNT_NAME": (
-                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login }}"
-                    ),
-                    "AZURE_STORAGE_ACCOUNT_KEY": (
-                        "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password }}"
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
                         "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login }}"
