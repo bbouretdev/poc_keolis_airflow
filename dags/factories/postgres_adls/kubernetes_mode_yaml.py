@@ -50,7 +50,8 @@ def create_dag(
             raw_partition = table_item.get("partition_col")
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
-            clean_task_id = target_name.lower().replace("/", "-").replace("_", "-")
+            # Standardisation de l'id de tâche
+            clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
@@ -65,8 +66,8 @@ def create_dag(
                 "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port }}",
 
-                # Variables applicatives DLT
-                "DLT_PIPELINE_ID": f"{{{{ params.ID_PIPELINE }}}}_{clean_task_id}",
+                # Variables applicatives DLT (Identifiant nettoyé en snake_case)
+                "DLT_PIPELINE_ID": f"pg2adls_{clean_task_id}",
                 "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
                 "DLT_DATASET_NAME": "{{ params.DATASET_NAME }}",
                 "DLT_SOURCE_TABLE": table_source,
@@ -76,8 +77,9 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination DLT Bucket URL
+                # Configuration Destination DLT Native
                 "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
+                "DESTINATION__FILESYSTEM__LAYOUT": "{table_name}/Year={year}/Month={month}/Day={day}/{file_id}.{ext}" if partition_col else "{table_name}/{file_id}.{ext}",
             }
 
             use_azurite_str = str(params.get("USE_AZURITE")).lower()
@@ -111,7 +113,7 @@ def create_dag(
                 })
 
             KubernetesPodOperator(
-                task_id=f"run_dlt_{clean_task_id}",
+                task_id=f"run_dlt_{clean_task_id.replace('_', '-')}",
                 name=f"dlt-pod-{dag_id}-{clean_task_id}".replace("_", "-").lower(),
                 namespace="airflow",
                 image="dlt-ingestion-engine:dev",
