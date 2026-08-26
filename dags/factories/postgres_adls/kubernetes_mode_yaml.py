@@ -34,19 +34,8 @@ def create_dag(
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
         git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
 
-        # Commande Bash avec tunnel TCP local socat (Option B)
         bash_cmd = f"""
         set -e
-
-        if [ "$USE_AZURITE" = "true" ]; then
-            echo "🔌 Configuration du tunnel local socat (127.0.0.1:10000 -> azurite:10000)..."
-            if ! command -v socat &> /dev/null; then
-                apt-get update && apt-get install -y socat || true
-            fi
-            socat TCP-LISTEN:10000,fork,reuseaddr TCP:azurite:10000 &
-            sleep 1
-        fi
-
         echo "=== Cloning repository ==="
         git clone -b {git_branch} {git_host} /tmp/repo
         cd /tmp/repo
