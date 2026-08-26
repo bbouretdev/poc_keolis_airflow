@@ -56,12 +56,6 @@ def create_dag(
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
 
-            # En mode Azurite, on formate l'URL avec l'Account Name pour que le parser deltalake Rust reconnaisse le conteneur
-            if use_azurite_bool:
-                bucket_url = "az://devstoreaccount1/{{ params.CONTENEUR_AZURE }}"
-            else:
-                bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
-
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
                 "RUNTIME__DLTHUB_TELEMETRY": "false",
@@ -87,8 +81,8 @@ def create_dag(
                 "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
                 "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
 
-                # Destination DLT Bucket URL
-                "DESTINATION__FILESYSTEM__BUCKET_URL": bucket_url,
+                # Destination DLT Bucket URL standard
+                "DESTINATION__FILESYSTEM__BUCKET_URL": "az://{{ params.CONTENEUR_AZURE }}",
             }
             
             if use_azurite_bool:
@@ -106,15 +100,15 @@ def create_dag(
                     ),
                     "DESTINATION__FILESYSTEM__CREDENTIALS__CONNECTION_STRING": az_conn,
 
-                    # Surcharges bas niveau pour les bilbiothèques Rust/Python
+                    # Surcharges réseau
                     "AZURE_STORAGE_ACCOUNT_NAME": "devstoreaccount1",
                     "AZURE_STORAGE_ACCOUNT_KEY": (
                         "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
                     ),
                     "AZURE_STORAGE_ALLOW_HTTP": "true",
                     "AZURE_STORAGE_USE_EMULATOR": "true",
-                    "AZURE_ENDPOINT_URL": "http://azurite:10000/devstoreaccount1",
-                    "AZURE_BLOB_ENDPOINT": "http://azurite:10000/devstoreaccount1",
+                    "AZURE_ENDPOINT_URL": "http://azurite:10000",
+                    "AZURE_BLOB_ENDPOINT": "http://azurite:10000",
                 })
             else:
                 table_env_vars.update({
