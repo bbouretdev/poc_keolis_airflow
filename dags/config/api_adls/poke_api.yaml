@@ -1,0 +1,26 @@
+dag_id: "api_to_adls__poke_api"
+description: "Exportation de ressources PokeAPI vers des fichiers Parquet dans Azurite/ADLS"
+schedule: null
+
+params:
+  ID_PIPELINE: "api_to_adls__poke_api"
+  GIT_CONN_ID: "git-dlt"
+  BUCKET_URL: "az://target-data"
+  USE_AZURITE: "true"
+  AZURE_CONN_ID: "azure_storage_default"
+  DATASET_NAME: "poke_api"
+  PIPELINE_NAME: "poke_api"
+  BASE_URL: "https://pokeapi.co/api/v2"
+  RESOURCES:
+    - name: "pokemon"
+      endpoint:
+        path: "pokemon"
+        data_selector: "results"
+  LOAD_MODE: "full"
+  DEFAULT_PARAMS:
+    limit: 20
+    offset: 0
+  PRIMARY_KEY: null
+  LAYOUT: "{table_name}"
+  MAX_RETRY_ATTEMPTS: 3
+  RETRY_BASE_DELAY: 5.0

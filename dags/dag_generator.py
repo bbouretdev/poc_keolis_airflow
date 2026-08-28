@@ -9,6 +9,7 @@ from airflow.sdk import Param
 from factories.postgres_postgres.kubernetes_mode_yaml import create_dag as create_pg2pg_dag
 from factories.adls_postgres.kubernetes_mode_yaml import create_dag as create_adls2pg_dag
 from factories.postgres_adls.kubernetes_mode_yaml import create_dag as create_pg2adls_dag
+from factories.api_adls.kubernetes_mode_yaml import create_dag as create_api2adls_dag
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +71,27 @@ def build_pg2adls_params(raw_params: dict) -> dict:
     }
 
 
+def build_api2adls_params(raw_params: dict) -> dict:
+    raw_params = raw_params or {}
+    return {
+        "ID_PIPELINE": Param(raw_params.get("ID_PIPELINE", "DEFAULT_API2ADLS_ID"), type="string"),
+        "GIT_CONN_ID": Param(raw_params.get("GIT_CONN_ID", "git-dlt"), type="string"),
+        "BUCKET_URL": Param(raw_params.get("BUCKET_URL", "az://target-data"), type="string"),
+        "USE_AZURITE": Param(raw_params.get("USE_AZURITE", "true"), type="string", enum=["true", "false"]),
+        "AZURE_CONN_ID": Param(raw_params.get("AZURE_CONN_ID", "azure_storage_default"), type="string"),
+        "DATASET_NAME": Param(raw_params.get("DATASET_NAME", "poke_api"), type="string"),
+        "PIPELINE_NAME": Param(raw_params.get("PIPELINE_NAME", "poke_api"), type="string"),
+        "BASE_URL": Param(raw_params.get("BASE_URL", "https://pokeapi.co/api/v2"), type="string"),
+        "RESOURCES": Param(raw_params.get("RESOURCES", []), type="array", minItems=1),
+        "LOAD_MODE": Param(raw_params.get("LOAD_MODE", "full"), type="string", enum=["full", "delta"]),
+        "DEFAULT_PARAMS": Param(raw_params.get("DEFAULT_PARAMS", {}), type="object"),
+        "PRIMARY_KEY": Param(raw_params.get("PRIMARY_KEY"), type=["string", "null"]),
+        "LAYOUT": Param(raw_params.get("LAYOUT", "{table_name}"), type="string"),
+        "MAX_RETRY_ATTEMPTS": Param(raw_params.get("MAX_RETRY_ATTEMPTS", 3), type="integer", minimum=1),
+        "RETRY_BASE_DELAY": Param(raw_params.get("RETRY_BASE_DELAY", 5.0), type="number", minimum=0),
+    }
+
+
 # --- SCAN AUTOMATIQUE PAR TYPOLOGIE ---
 
 def load_dags_for_typology(folder_name: str, build_params_fn, create_dag_fn):
@@ -95,3 +117,4 @@ def load_dags_for_typology(folder_name: str, build_params_fn, create_dag_fn):
 load_dags_for_typology("postgres_postgres", build_pg2pg_params, create_pg2pg_dag)
 load_dags_for_typology("adls_postgres", build_adls2pg_params, create_adls2pg_dag)
 load_dags_for_typology("postgres_adls", build_pg2adls_params, create_pg2adls_dag)
+load_dags_for_typology("api_adls", build_api2adls_params, create_api2adls_dag)
