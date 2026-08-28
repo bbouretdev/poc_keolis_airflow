@@ -1,6 +1,7 @@
 import logging
-from pathlib import Path
+import os
 import yaml
+import adlfs
 
 from airflow import DAG
 from airflow.sdk import Param
@@ -9,8 +10,26 @@ from factories.postgres_adls.kubernetes_mode_yaml import create_dag as create_pg
 
 logger = logging.getLogger(__name__)
 
-CURRENT_DIR = Path(__file__).resolve().parent
-CONFIG_BASE_DIR = CURRENT_DIR / "config"
+# -----------------------------------------------------------------------------
+# 1. CONFIGURATION DU DEPOSITAIRE DE YAML (AZURITE / ADLS)
+# -----------------------------------------------------------------------------
+# On peut utiliser une variable d'environnement système ou la fixer par défaut
+USE_AZURITE = os.environ.get("USE_AZURITE", "true").lower() in ("true", "1", "yes")
+
+CONFIG_CONTAINER = "configs-dags"  # Le conteneur qui hébergera tes YAML
+
+if USE_AZURITE:
+    storage_options = {
+        "account_name": "devstoreaccount1",
+        "account_key": "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
+        "custom_domain": "azurite:10000/devstoreaccount1",
+        "use_ssl": False,
+    }
+else:
+    # Mode Prod Azure : Utilise la Connection String ou les identifiants d'environnement
+    storage_options = {
+        "connection_string": os.environ.get("AZURE_STORAGE_CONNECTION_STRING"),
+    }
 
 
 def build_pg2adls_params(cfg: dict) -> dict:
@@ -28,7 +47,6 @@ def build_pg2adls_params(cfg: dict) -> dict:
     if not tables or not isinstance(tables, list):
         raise ValueError("❌ La section 'pipeline.tables' doit être une liste non vide.")
 
-    # Validation du découpage source / target / execution par table
     for idx, tbl in enumerate(tables):
         for sub_block in ["source", "target", "execution"]:
             if sub_block not in tbl:
@@ -63,27 +81,41 @@ def build_pg2adls_params(cfg: dict) -> dict:
     }
 
 
-def load_dags_for_typology(folder_name: str, build_params_fn, create_dag_fn):
-    config_dir = CONFIG_BASE_DIR / folder_name
-    if config_dir.exists():
-        for yaml_file in config_dir.glob("*.yaml"):
+def load_dags_from_blob_storage(typology_folder: str, build_params_fn, create_dag_fn):
+    """
+    Parcourt les fichiers YAML présents dans le Blob Storage / Azurite 
+    sous le dossier 'configs-dags/<typology_folder>/*.yaml'
+    """
+    try:
+        # Connexion au système de fichiers Azurite / Azure Blob
+        fs = adlfs.AzureBlobFileSystem(**storage_options)
+        
+        path_pattern = f"{CONFIG_CONTAINER}/{typology_folder}/*.yaml"
+        yaml_files = fs.glob(path_pattern)
+
+        for remote_yaml_path in yaml_files:
             try:
-                with open(yaml_file, "r", encoding="utf-8") as f:
+                with fs.open(remote_yaml_path, "r", encoding="utf-8") as f:
                     cfg = yaml.safe_load(f)
 
                 if cfg and "dag_id" in cfg:
                     dag_id = cfg["dag_id"]
                     params = build_params_fn(cfg)
 
+                    # Génération dynamique dans le contexte Airflow
                     globals()[dag_id] = create_dag_fn(
                         dag_id=dag_id,
                         description=cfg.get("description", ""),
                         schedule=cfg.get("schedule"),
                         params=params,
                     )
+                    logger.info(f"✅ DAG {dag_id} chargé depuis Azurite/ADLS ({remote_yaml_path})")
             except Exception as e:
-                logger.error(f"❌ Erreur lors du chargement de {folder_name}/{yaml_file.name}: {e}")
-                raise e
+                logger.error(f"❌ Erreur lors de la lecture du YAML {remote_yaml_path}: {e}")
+
+    except Exception as e:
+        logger.error(f"❌ Impossible d'accéder au conteneur de conf '{CONFIG_CONTAINER}' : {e}")
 
 
-load_dags_for_typology("postgres_adls", build_pg2adls_params, create_pg2adls_dag)
+# Chargement dynamique des YAML stockés dans Azurite (dossier 'postgres_adls')
+load_dags_from_blob_storage("postgres_adls", build_pg2adls_params, create_pg2adls_dag)
