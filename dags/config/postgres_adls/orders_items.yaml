@@ -19,7 +19,7 @@ pipeline:
         dataset: "billetique"
         name: "ventes/commandes_export"
         format: "delta"
-        write_strategy: "append"
+        write_strategy: "replace"
         use_partition: true
         partition_col: "expedition_date"
 
