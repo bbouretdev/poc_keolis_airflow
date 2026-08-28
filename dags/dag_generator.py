@@ -1,7 +1,6 @@
 import logging
 import os
 import yaml
-import adlfs
 from azure.storage.blob import BlobServiceClient
 
 from airflow import DAG
@@ -17,9 +16,10 @@ logger = logging.getLogger(__name__)
 USE_AZURITE = os.environ.get("USE_AZURITE", "true").lower() in ("true", "1", "yes")
 CONFIG_CONTAINER = "configs-dags"
 
-# Hôte Azurite accessible depuis le pod Airflow
-AZURITE_HOST = os.environ.get("AZURITE_HOST", "azurite")
-AZURITE_PORT = os.environ.get("AZURITE_PORT", "10000")
+# Nettoyage des variables : on force le nom DNS Kubernetes ou l'IP pure sans "tcp://"
+AZURITE_HOST = os.environ.get("AZURITE_CUSTOM_HOST", "azurite")
+AZURITE_PORT = "10000"  # Port HTTP pur
+
 AZURITE_ACCOUNT_NAME = "devstoreaccount1"
 AZURITE_ACCOUNT_KEY = (
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
@@ -76,17 +76,26 @@ def build_pg2adls_params(cfg: dict) -> dict:
 
 
 def fetch_yaml_configs_azurite(typology_folder: str) -> list[tuple[str, dict]]:
-    """Lecture robuste des YAML depuis Azurite via le SDK Azure Blob Officiel."""
+    """Lecture des YAML depuis Azurite via la Connection String explicite."""
     configs = []
+    
+    # URL construite proprement : http://azurite:10000/devstoreaccount1
+    blob_endpoint = f"http://{AZURITE_HOST}:{AZURITE_PORT}/{AZURITE_ACCOUNT_NAME}"
+    
     connection_string = (
         f"DefaultEndpointsProtocol=http;"
         f"AccountName={AZURITE_ACCOUNT_NAME};"
         f"AccountKey={AZURITE_ACCOUNT_KEY};"
-        f"BlobEndpoint=http://{AZURITE_HOST}:{AZURITE_PORT}/{AZURITE_ACCOUNT_NAME};"
+        f"BlobEndpoint={blob_endpoint};"
     )
 
     try:
-        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        # Timeout très court (3s) pour éviter de bloquer l'import d'Airflow si Azurite est indisponible
+        blob_service_client = BlobServiceClient.from_connection_string(
+            connection_string,
+            connection_timeout=3,
+            read_timeout=3
+        )
         container_client = blob_service_client.get_container_client(CONFIG_CONTAINER)
 
         prefix = f"{typology_folder}/"
@@ -106,7 +115,8 @@ def fetch_yaml_configs_azurite(typology_folder: str) -> list[tuple[str, dict]]:
 
 
 def fetch_yaml_configs_prod(typology_folder: str) -> list[tuple[str, dict]]:
-    """Lecture des YAML depuis ADLS Azure Réel via adlfs."""
+    """Lecture des YAML depuis Azure ADLS Réel."""
+    import adlfs
     configs = []
     try:
         fs = adlfs.AzureBlobFileSystem(
