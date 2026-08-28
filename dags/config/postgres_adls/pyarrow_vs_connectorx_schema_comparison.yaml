@@ -2,25 +2,27 @@ dag_id: "postgres_to_adls__pyarrow_vs_connectorx_schema_comparison"
 description: "Exportation des tables orders et items vers Parquet"
 schedule: null
 
-params:
-  ID_PIPELINE: "postgres_to_adls__pyarrow_vs_connectorx_schema_comparison"
-  GIT_CONN_ID: "git-dlt"
-  POSTGRESQL_SOURCE: "postgres_source"
-  
-  USE_AZURITE: "true"
-  AZURE_CONN_ID: "azure_storage_default"
-  
-  SCHEMA_SOURCE: "public"
-  DATASET_NAME: "billetique"
+# 1. Infrastructures & Connexions
+infrastructure:
+  git_connection_id: "git-dlt"
+  postgres_connection_id: "postgres_source"
+  azure_connection_id: "azure_storage_default"
+  use_azurite: true
 
-  TABLES:
-    - source: "test_precision_moteurs"
-      target_name: "pyarrow/test_precision_moteurs"
-      partition_col: null
-  
-  CONTENEUR_AZURE: "target-data"
-  MOTEUR_DLT: "pyarrow"
-  STRATEGIE_ECRITURE: "replace"
-  TAILLE_LOT: 100000
-  FORMAT_STOCKAGE: "parquet"
-  USE_PARTITION: "true"
+# 2. Définition des tables et réglages par table
+pipeline:
+  tables:
+    - source:
+        schema: "public"
+        table: "test_precision_moteurs"
+        backend: "pyarrow"
+        chunk_size: 100000
+
+      target:
+        container: "target-data"
+        dataset: "billetique"
+        name: "pyarrow/test_precision_moteurs"
+        format: "parquet"
+        write_strategy: "replace"
+        use_partition: false  # Mis à false car partition_col est à null
+        partition_col: null

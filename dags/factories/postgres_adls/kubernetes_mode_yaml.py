@@ -25,7 +25,7 @@ def create_dag(
         tables_list = raw_tables_param.value if hasattr(raw_tables_param, "value") else raw_tables_param
 
         if not tables_list or not isinstance(tables_list, list):
-            raise ValueError("❌ Le paramètre 'TABLES' doit être une liste non vide dans le YAML.")
+            raise ValueError("❌ Le paramètre 'TABLES' doit être une liste non vide.")
 
         raw_azurite = params.get("USE_AZURITE")
         azurite_val = raw_azurite.value if hasattr(raw_azurite, "value") else raw_azurite
@@ -45,18 +45,29 @@ def create_dag(
         """
 
         for table_item in tables_list:
-            if not isinstance(table_item, dict) or "source" not in table_item or "target_name" not in table_item:
-                raise KeyError("❌ Chaque élément de 'TABLES' doit obligatoirement contenir 'source' et 'target_name'.")
+            src = table_item["source"]
+            tgt = table_item["target"]
+            exe = table_item["execution"]
 
-            table_source = table_item["source"]
-            target_name = table_item["target_name"]
+            # Extraction par domaine
+            table_source = src["table"]
+            source_schema = src["schema"]
+
+            target_name = tgt["name"]
+            dataset_name = tgt["dataset"]
+            azure_container = tgt["container"]
+            storage_format = str(tgt["format"]).lower()
+            write_strategy = str(tgt["write_strategy"]).lower()
             
-            raw_partition = table_item.get("partition_col")
+            use_partition_bool = str(tgt.get("use_partition", False)).strip().lower() in ("true", "1", "yes")
+            raw_partition = tgt.get("partition_col")
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
-            clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
+            backend_engine = str(exe["backend"]).lower()
+            chunk_size_val = str(exe["chunk_size"])
 
-            bucket_url = "az://{{ params.CONTENEUR_AZURE }}"
+            clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
+            bucket_url = f"az://{azure_container}"
 
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
@@ -72,18 +83,18 @@ def create_dag(
                 "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port }}",
 
-                # Variables DLT
+                # Variables DLT spécifiques à la table
                 "DLT_PIPELINE_ID": f"pg2adls_{clean_task_id}",
-                "DLT_SOURCE_SCHEMA": "{{ params.SCHEMA_SOURCE }}",
-                "DLT_DATASET_NAME": "{{ params.DATASET_NAME }}",
+                "DLT_SOURCE_SCHEMA": source_schema,
+                "DLT_DATASET_NAME": dataset_name,
                 "DLT_SOURCE_TABLE": table_source,
                 "DLT_TARGET_NAME": target_name,
                 "DLT_PARTITION_COL": partition_col,
-                "DLT_BACKEND": "{{ params.MOTEUR_DLT }}",
-                "DLT_CHUNK_SIZE": "{{ params.TAILLE_LOT }}",
-                "DLT_WRITE_STRATEGY": "{{ params.STRATEGIE_ECRITURE }}",
-                "DLT_STORAGE_FORMAT": "{{ params.FORMAT_STOCKAGE }}",
-                "DLT_USE_PARTITION": "{{ params.USE_PARTITION }}",
+                "DLT_BACKEND": backend_engine,
+                "DLT_CHUNK_SIZE": chunk_size_val,
+                "DLT_WRITE_STRATEGY": write_strategy,
+                "DLT_STORAGE_FORMAT": storage_format,
+                "DLT_USE_PARTITION": "true" if use_partition_bool else "false",
 
                 "DESTINATION__FILESYSTEM__BUCKET_URL": bucket_url,
             }

@@ -1,26 +1,28 @@
 dag_id: "postgres_to_adls__orders_items"
-description: "Exportation des tables orders vers ADLS/Azurite"
+description: "Exportation configurable des tables Postgres vers ADLS/Azurite"
 schedule: null
 
-params:
-  ID_PIPELINE: "postgres_to_adls__orders_items"
-  GIT_CONN_ID: "git-dlt"
-  POSTGRESQL_SOURCE: "postgres_source"
-  
-  USE_AZURITE: "true"
-  AZURE_CONN_ID: "azure_storage_default"
-  
-  SCHEMA_SOURCE: "dlt"
-  DATASET_NAME: "billetique"
+infrastructure:
+  git_connection_id: "git-dlt"
+  postgres_connection_id: "postgres_source"
+  azure_connection_id: "azure_storage_default"
+  use_azurite: true
 
-  TABLES:
-    - source: "orders"
-      target_name: "ventes/commandes_export"
-      partition_col: "expedition_date"
-  
-  CONTENEUR_AZURE: "target-data"
-  MOTEUR_DLT: "pyarrow"
-  STRATEGIE_ECRITURE: "replace"
-  TAILLE_LOT: 100000
-  FORMAT_STOCKAGE: "parquet"
-  USE_PARTITION: "true"
+pipeline:
+  tables:
+    - source:
+        schema: "dlt"
+        table: "orders"
+
+      target:
+        container: "target-data"
+        dataset: "billetique"
+        name: "ventes/commandes_export"
+        format: "delta"
+        write_strategy: "replace"
+        use_partition: true
+        partition_col: "expedition_date"
+
+      execution:
+        backend: "pyarrow"
+        chunk_size: 500000
