@@ -26,3 +26,7 @@ pipeline:
         write_strategy: "replace"
         use_partition: false  # Mis à false car partition_col est à null
         partition_col: null
+
+      execution:
+        backend: "pyarrow"
+        chunk_size: 500000
