@@ -24,14 +24,13 @@ def create_dag(
             "RUNTIME__DLTHUB_TELEMETRY": "false",
             "USE_AZURITE": "{{ params.USE_AZURITE }}",
             "AZURE_STORAGE_ACCOUNT_NAME": (
-                "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login or '' }}"
+                "{{ 'devstoreaccount1' if params.USE_AZURITE == 'true' else ((conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login or '') }}"
             ),
             "AZURE_STORAGE_ACCOUNT_KEY": (
-                "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password or '' }}"
+                "{{ 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==' if params.USE_AZURITE == 'true' else ((conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password or '') }}"
             ),
             "AZURE_STORAGE_CONNECTION_STRING": (
-                "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
-                "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
+                "{{ 'DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite.airflow.svc.cluster.local:10000/devstoreaccount1;' if params.USE_AZURITE == 'true' else ((conn.get(params.AZURE_CONN_ID, None) or None) and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '')) }}"
             ),
             "API_BUCKET_URL": "{{ params.BUCKET_URL }}",
             "API_DATASET_NAME": "{{ params.DATASET_NAME }}",
