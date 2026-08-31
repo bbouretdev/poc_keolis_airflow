@@ -10,15 +10,11 @@ from factories.postgres_adls.kubernetes_mode_yaml import create_dag as create_pg
 
 logger = logging.getLogger(__name__)
 
-# -----------------------------------------------------------------------------
-# CONFIGURATION DU DÉPOSITAIRE DE YAML (AZURITE / ADLS)
-# -----------------------------------------------------------------------------
 USE_AZURITE = os.environ.get("USE_AZURITE", "true").lower() in ("true", "1", "yes")
 CONFIG_CONTAINER = "configs-dags"
 
 AZURITE_HOST = os.environ.get("AZURITE_CUSTOM_HOST", "azurite")
 AZURITE_PORT = "10000"
-
 AZURITE_ACCOUNT_NAME = "devstoreaccount1"
 AZURITE_ACCOUNT_KEY = (
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
@@ -63,13 +59,11 @@ def build_pg2adls_params(cfg: dict) -> dict:
                 f"source={missing_src}, target={missing_tgt}, execution={missing_exe}"
             )
 
-        # Validation de la configuration du mode fenêtré
-        enable_windowing = src.get("enable_windowing", False)
-        cursor_col = src.get("incremental_cursor")
-        if enable_windowing and not cursor_col:
-            raise ValueError(
-                f"❌ La table #{idx + 1} ({src.get('table')}) active 'enable_windowing: true' "
-                f"mais 'incremental_cursor' n'est pas renseigné dans le bloc 'source'."
+        # Validation spécifique au mode fenêtré
+        if src.get("enable_windowing", False) and not src.get("incremental_cursor"):
+            raise KeyError(
+                f"❌ La table #{idx + 1} ({src.get('table')}) a 'enable_windowing: true' "
+                f"mais le paramètre 'incremental_cursor' est manquant."
             )
 
     return {
@@ -100,7 +94,6 @@ def fetch_yaml_configs_azurite(typology_folder: str) -> list[tuple[str, dict]]:
             read_timeout=3
         )
         container_client = blob_service_client.get_container_client(CONFIG_CONTAINER)
-
         prefix = f"{typology_folder}/"
         blobs = container_client.list_blobs(name_starts_with=prefix)
 

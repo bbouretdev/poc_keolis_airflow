@@ -49,14 +49,13 @@ def create_dag(
             tgt = table_item["target"]
             exe = table_item["execution"]
 
-            # Extraction par domaine : SOURCE
             table_source = src["table"]
             source_schema = src["schema"]
+            
             enable_windowing_bool = str(src.get("enable_windowing", False)).strip().lower() in ("true", "1", "yes")
             raw_cursor = src.get("incremental_cursor")
-            incremental_cursor = str(raw_cursor).strip() if raw_cursor is not None else ""
+            incremental_cursor = str(raw_cursor) if raw_cursor is not None else ""
 
-            # Extraction par domaine : TARGET
             target_name = tgt["name"]
             dataset_name = tgt["dataset"]
             azure_container = tgt["container"]
@@ -67,15 +66,14 @@ def create_dag(
             raw_partition = tgt.get("partition_col")
             partition_col = str(raw_partition) if raw_partition is not None else ""
 
-            # Extraction par domaine : EXECUTION
             backend_engine = str(exe["backend"]).lower()
             chunk_size_val = str(exe["chunk_size"])
 
             clean_task_id = target_name.lower().replace("/", "_").replace("-", "_")
             bucket_url = f"az://{azure_container}"
 
-            # Identifiant STABLE de pipeline dlt pour garantir la persistance du Watermark sur le storage
-            stable_pipeline_id = f"{dag_id}__{source_schema}_{table_source}"
+            # Identifiant unique fixe pour sauvegarder le watermark
+            pipeline_id_stable = f"{dag_id}__{source_schema}_{table_source}"
 
             table_env_vars = {
                 "RUNTIME__LOG_LEVEL": "INFO",
@@ -83,7 +81,7 @@ def create_dag(
                 "RUNTIME__WORKERS": "4",
                 "USE_AZURITE": "true" if use_azurite_bool else "false",
 
-                # Source Postgres
+                # Credentials Postgres
                 "SOURCES__SQL_DATABASE__CREDENTIALS__DRIVERNAME": "postgresql",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__DATABASE": "{{ conn.get(params.POSTGRESQL_SOURCE).schema }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__USERNAME": "{{ conn.get(params.POSTGRESQL_SOURCE).login }}",
@@ -91,15 +89,11 @@ def create_dag(
                 "SOURCES__SQL_DATABASE__CREDENTIALS__HOST": "{{ conn.get(params.POSTGRESQL_SOURCE).host }}",
                 "SOURCES__SQL_DATABASE__CREDENTIALS__PORT": "{{ conn.get(params.POSTGRESQL_SOURCE).port }}",
 
-                # Variables DLT spécifiques à la table (source + fenêtrage)
-                "DLT_PIPELINE_ID": stable_pipeline_id,
+                # Variables DLT
+                "DLT_PIPELINE_ID": pipeline_id_stable,
                 "DLT_SOURCE_SCHEMA": source_schema,
-                "DLT_SOURCE_TABLE": table_source,
-                "DLT_ENABLE_WINDOWING": "true" if enable_windowing_bool else "false",
-                "DLT_INCREMENTAL_CURSOR": incremental_cursor,
-
-                # Variables DLT spécifiques à la cible
                 "DLT_DATASET_NAME": dataset_name,
+                "DLT_SOURCE_TABLE": table_source,
                 "DLT_TARGET_NAME": target_name,
                 "DLT_PARTITION_COL": partition_col,
                 "DLT_BACKEND": backend_engine,
@@ -107,6 +101,10 @@ def create_dag(
                 "DLT_WRITE_STRATEGY": write_strategy,
                 "DLT_STORAGE_FORMAT": storage_format,
                 "DLT_USE_PARTITION": "true" if use_partition_bool else "false",
+
+                # Paramètres Mode Fenêtré
+                "DLT_ENABLE_WINDOWING": "true" if enable_windowing_bool else "false",
+                "DLT_INCREMENTAL_CURSOR": incremental_cursor,
 
                 "DESTINATION__FILESYSTEM__BUCKET_URL": bucket_url,
             }
