@@ -59,7 +59,7 @@ def create_dag(
         import os
         print(os.environ.get("AZURE_STORAGE_CONNECTION_STRING"))
 
-        from pipelines.api_adls.api_to_adls import run_rest_api_to_adls_pipeline
+        from pipelines.api_adls.api_to_adls_bis import run_rest_api_to_adls_pipeline
 
         run_rest_api_to_adls_pipeline(
             bucket_url=os.environ["API_BUCKET_URL"],
