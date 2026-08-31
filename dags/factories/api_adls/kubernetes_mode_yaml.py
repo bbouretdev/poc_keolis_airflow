@@ -57,6 +57,7 @@ def create_dag(
         python - <<'PY'
         import json
         import os
+        print(os.environ.get("AZURE_STORAGE_CONNECTION_STRING"))
 
         from pipelines.api_adls.api_to_adls import run_rest_api_to_adls_pipeline
 
