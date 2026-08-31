@@ -51,7 +51,7 @@ def create_dag(
         set -e
         echo "=== Cloning repository ==="
         git clone -b {git_branch} {git_host} /tmp/repo
-        ll /tmp/repo
+        ls /tmp/repo
         cd /tmp/repo
 
         echo "=== Running DLT API -> ADLS export ==="
