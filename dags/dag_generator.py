@@ -11,14 +11,13 @@ from factories.postgres_adls.kubernetes_mode_yaml import create_dag as create_pg
 logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
-# 1. CONFIGURATION DU DÉPOSITAIRE DE YAML (AZURITE / ADLS)
+# CONFIGURATION DU DÉPOSITAIRE DE YAML (AZURITE / ADLS)
 # -----------------------------------------------------------------------------
 USE_AZURITE = os.environ.get("USE_AZURITE", "true").lower() in ("true", "1", "yes")
 CONFIG_CONTAINER = "configs-dags"
 
-# Nettoyage des variables : on force le nom DNS Kubernetes ou l'IP pure sans "tcp://"
 AZURITE_HOST = os.environ.get("AZURITE_CUSTOM_HOST", "azurite")
-AZURITE_PORT = "10000"  # Port HTTP pur
+AZURITE_PORT = "10000"
 
 AZURITE_ACCOUNT_NAME = "devstoreaccount1"
 AZURITE_ACCOUNT_KEY = (
@@ -64,6 +63,15 @@ def build_pg2adls_params(cfg: dict) -> dict:
                 f"source={missing_src}, target={missing_tgt}, execution={missing_exe}"
             )
 
+        # Validation de la configuration du mode fenêtré
+        enable_windowing = src.get("enable_windowing", False)
+        cursor_col = src.get("incremental_cursor")
+        if enable_windowing and not cursor_col:
+            raise ValueError(
+                f"❌ La table #{idx + 1} ({src.get('table')}) active 'enable_windowing: true' "
+                f"mais 'incremental_cursor' n'est pas renseigné dans le bloc 'source'."
+            )
+
     return {
         "ID_PIPELINE": cfg.get("dag_id"),
         "GIT_CONN_ID": Param(infra["git_connection_id"], type="string"),
@@ -76,12 +84,8 @@ def build_pg2adls_params(cfg: dict) -> dict:
 
 
 def fetch_yaml_configs_azurite(typology_folder: str) -> list[tuple[str, dict]]:
-    """Lecture des YAML depuis Azurite via la Connection String explicite."""
     configs = []
-    
-    # URL construite proprement : http://azurite:10000/devstoreaccount1
     blob_endpoint = f"http://{AZURITE_HOST}:{AZURITE_PORT}/{AZURITE_ACCOUNT_NAME}"
-    
     connection_string = (
         f"DefaultEndpointsProtocol=http;"
         f"AccountName={AZURITE_ACCOUNT_NAME};"
@@ -90,7 +94,6 @@ def fetch_yaml_configs_azurite(typology_folder: str) -> list[tuple[str, dict]]:
     )
 
     try:
-        # Timeout très court (3s) pour éviter de bloquer l'import d'Airflow si Azurite est indisponible
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string,
             connection_timeout=3,
@@ -115,7 +118,6 @@ def fetch_yaml_configs_azurite(typology_folder: str) -> list[tuple[str, dict]]:
 
 
 def fetch_yaml_configs_prod(typology_folder: str) -> list[tuple[str, dict]]:
-    """Lecture des YAML depuis Azure ADLS Réel."""
     import adlfs
     configs = []
     try:
@@ -159,5 +161,4 @@ def load_dags_from_blob_storage(typology_folder: str, build_params_fn, create_da
             logger.error(f"❌ Erreur lors du parsing du fichier {source_path} : {e}")
 
 
-# Chargement dynamique
 load_dags_from_blob_storage("postgres_adls", build_pg2adls_params, create_pg2adls_dag)
