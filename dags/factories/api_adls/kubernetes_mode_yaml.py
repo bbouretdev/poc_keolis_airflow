@@ -54,27 +54,7 @@ def create_dag(
         cd /tmp/repo
 
         echo "=== Running DLT API -> ADLS export ==="
-        python - <<'PY'
-        import json
-        import os
-        print(os.environ.get("AZURE_STORAGE_CONNECTION_STRING"))
-
-        from pipelines.api_adls.api_to_adls_bis import run_rest_api_to_adls_pipeline
-
-        run_rest_api_to_adls_pipeline(
-            bucket_url=os.environ["API_BUCKET_URL"],
-            dataset_name=os.environ["API_DATASET_NAME"],
-            pipeline_name=os.environ["API_PIPELINE_NAME"],
-            base_url=os.environ["API_BASE_URL"],
-            resources=json.loads(os.environ["API_RESOURCES"]),
-            load_mode=os.environ["API_LOAD_MODE"],
-            default_params=json.loads(os.environ["API_DEFAULT_PARAMS"]),
-            primary_key=os.environ["API_PRIMARY_KEY"] or None,
-            layout=os.environ["API_LAYOUT"],
-            max_retry_attempts=int(os.environ["API_MAX_RETRY_ATTEMPTS"]),
-            retry_base_delay=float(os.environ["API_RETRY_BASE_DELAY"]),
-        )
-        PY
+        python pipelines/api_adls/api_to_adls.py
         """)
 
         KubernetesPodOperator(
