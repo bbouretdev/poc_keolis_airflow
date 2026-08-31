@@ -32,7 +32,7 @@ dags:
   gitSync:
     enabled: true
     repo: "https://github.com/bbouretdev/poc_keolis_airflow.git"
-    branch: "master"
+    branch: "jbaudrin"
     subPath: "dags"
     wait: 60
 

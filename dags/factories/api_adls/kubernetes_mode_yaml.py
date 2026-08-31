@@ -46,7 +46,7 @@ def create_dag(
         }
 
         git_host = "{{ conn.get(params.GIT_CONN_ID).host }}"
-        git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'main') }}}}"
+        git_branch = f"{{{{ conn.get(params.GIT_CONN_ID).extra_dejson.get('branch', 'jbaudrin') }}}}"
         bash_cmd = textwrap.dedent(f"""
         set -e
         echo "=== Cloning repository ==="
