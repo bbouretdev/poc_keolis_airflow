@@ -77,7 +77,7 @@ def build_api2adls_params(raw_params: dict) -> dict:
         "ID_PIPELINE": Param(raw_params.get("ID_PIPELINE", "DEFAULT_API2ADLS_ID"), type="string"),
         "GIT_CONN_ID": Param(raw_params.get("GIT_CONN_ID", "git-dlt"), type="string"),
         "BUCKET_URL": Param(raw_params.get("BUCKET_URL", "az://target-data"), type="string"),
-        "USE_AZURITE": Param(raw_params.get("USE_AZURITE", "true"), type="string", enum=["true", "false"]),
+        "USE_AZURITE": Param(raw_params.get("USE_AZURITE", "false"), type="string", enum=["true", "false"]),
         "AZURE_CONN_ID": Param(raw_params.get("AZURE_CONN_ID", "azure_storage_default"), type="string"),
         "DATASET_NAME": Param(raw_params.get("DATASET_NAME", "poke_api"), type="string"),
         "PIPELINE_NAME": Param(raw_params.get("PIPELINE_NAME", "poke_api"), type="string"),

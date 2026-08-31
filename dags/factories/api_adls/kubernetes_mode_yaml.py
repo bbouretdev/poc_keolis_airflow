@@ -22,15 +22,16 @@ def create_dag(
         api_env_vars = {
             "RUNTIME__LOG_LEVEL": "INFO",
             "RUNTIME__DLTHUB_TELEMETRY": "false",
+            "USE_AZURITE": "{{ params.USE_AZURITE }}",
+            "AZURE_STORAGE_ACCOUNT_NAME": (
+                "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login or '' }}"
+            ),
+            "AZURE_STORAGE_ACCOUNT_KEY": (
+                "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password or '' }}"
+            ),
             "AZURE_STORAGE_CONNECTION_STRING": (
                 "{{ (conn.get(params.AZURE_CONN_ID, None) or None) "
                 "and (conn.get(params.AZURE_CONN_ID).extra_dejson or {}).get('connection_string', '') }}"
-            ),
-            "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_NAME": (
-                "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).login or '' }}"
-            ),
-            "DESTINATION__FILESYSTEM__CREDENTIALS__AZURE_STORAGE_ACCOUNT_KEY": (
-                "{{ (conn.get(params.AZURE_CONN_ID, None) or None) and conn.get(params.AZURE_CONN_ID).password or '' }}"
             ),
             "API_BUCKET_URL": "{{ params.BUCKET_URL }}",
             "API_DATASET_NAME": "{{ params.DATASET_NAME }}",
